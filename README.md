@@ -86,7 +86,7 @@ implementation, and evidence can be reviewed independently:
 
 
 ## How the visualization looks
-[!img](./img/vis.png)
+![img](./img/vis.png)
 
 
 ## Developers (Team `Ken Thompson`)
