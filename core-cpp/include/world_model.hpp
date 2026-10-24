@@ -1,33 +1,33 @@
 #pragma once
-#include "integrator.hpp"
-#include "contract.h"
 #include <cstdint>
+#include "contract.h"
+#include "integrator.hpp"
 
 namespace octo {
-constexpr std::size_t kBodyCount = 10;
+    constexpr std::size_t kBodyCount = 10;
 
-struct WorldState {
-    Vec3 positions_au[kBodyCount]{};
-    Vec3 velocities_au_per_year[kBodyCount]{};
-    double minimum_separation_au{};
-    double minimum_sun_distance_au{1.0};
-    std::uint8_t status{};
-};
+    struct WorldState {
+            Vec3 positions_au[kBodyCount]{};
+            Vec3 velocities_au_per_year[kBodyCount]{};
+            double minimum_separation_au{};
+            double minimum_sun_distance_au{1.0};
+            std::uint8_t status{};
+    };
 
-class WorldSimulator {
-public:
-    WorldSimulator(double target_au, double duration_years, std::uint32_t enablers);
-    void advance_to(double time_years);
-    WorldState state() const;
+    class WorldSimulator {
+        public:
+            WorldSimulator (double target_au, double duration_years, std::uint32_t enablers);
+            void advance_to (double time_years);
+            WorldState state () const;
 
-private:
-    double target_au_;
-    double duration_years_;
-    std::uint32_t enablers_;
-    double time_years_{};
-    WorldState state_{};
-    void step(double dt_years);
-};
+        private:
+            double target_au_;
+            double duration_years_;
+            std::uint32_t enablers_;
+            double time_years_{};
+            WorldState state_{};
+            void step (double dt_years);
+    };
 
-WorldState calculateWorld(double time_years, double target_au, std::uint32_t enablers);
-}
+    WorldState calculateWorld (double time_years, double target_au, std::uint32_t enablers);
+} // namespace octo

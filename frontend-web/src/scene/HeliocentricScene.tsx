@@ -53,6 +53,7 @@ export function HeliocentricScene({
   activeFrame,
 }: HeliocentricSceneProps) {
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const failurePulse = useRef<THREE.Mesh | null>(null);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const { camera } = useThree();
@@ -107,6 +108,12 @@ export function HeliocentricScene({
     const i0 = Math.floor(t);
     const i1 = Math.min(i0 + 1, numFrames - 1);
     const alpha = t - i0;
+    const failed = frames[i0].status !== 0;
+    if (failurePulse.current) {
+      const pulse = failed ? 1 + 0.18 * Math.sin(performance.now() * 0.008) : 0;
+      failurePulse.current.scale.setScalar(pulse);
+      failurePulse.current.visible = failed;
+    }
 
     for (let b = 0; b < BODY_META.length; b++) {
       const mesh = meshRefs.current[b];
@@ -148,6 +155,10 @@ export function HeliocentricScene({
       <ambientLight intensity={1.2} />
       <pointLight position={[0, 0, 0]} intensity={3} color="#fff4cf" />
       <directionalLight position={[20, 30, 40]} intensity={2.5} color="#d7eaff" />
+      <mesh ref={failurePulse} visible={false}>
+        <sphereGeometry args={[3.2, 20, 20]} />
+        <meshBasicMaterial color="#ff315d" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
+      </mesh>
       <OrbitControls ref={controlsRef} makeDefault />
       <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
 

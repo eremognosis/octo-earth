@@ -26,17 +26,16 @@ class SimulationRequest(BaseModel):
     target_au: float = Field(2.70, gt=0.0, le=100.0)
     max_years: float = Field(10000.0, gt=0.0, le=1_000_000.0)
     arm_length_m: float = Field(1.2e7, gt=0.0)
-    jc_limit_a_m2: float = Field(1.0e20, gt=0.0)
+    jc_limit_a_m2: float = Field(1.0e25, gt=0.0)
     yield_strength_pa: float = Field(1.5e18, gt=0.0)
-    gravity_tether_on: bool = True
     propulsion_enabler: bool = True
     structural_enabler: bool = True
     superconducting_enabler: bool = True
     frames: int = Field(10000, ge=1, le=1_000_000)
 
     def to_c_config(self) -> SimConfig:
-        mask = (1 if self.gravity_tether_on else 0) | (2 if self.propulsion_enabler else 0)
-        mask |= (4 if self.structural_enabler else 0) | (8 if self.superconducting_enabler else 0)
+        mask = (1 if self.propulsion_enabler else 0)
+        mask |= (2 if self.structural_enabler else 0) | (4 if self.superconducting_enabler else 0)
         return SimConfig(
             self.target_au, self.max_years, self.arm_length_m, self.jc_limit_a_m2,
             self.yield_strength_pa, mask, self.frames,

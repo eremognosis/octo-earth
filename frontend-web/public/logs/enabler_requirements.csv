@@ -1,0 +1,4 @@
+enabler,allowed_assumption,bound,with_enabler,without_enabler
+propulsion,external power/plasma interaction,configured mission power,PASS,JourneyIncomplete
+structure,ideal nanotube/graphene arm,configured yield strength,PASS,CrustShear
+superconductor,room-temperature conductor,configured critical current density,PASS,Quench

@@ -39,13 +39,13 @@ class SimConfig(ctypes.Structure):
         ("arm_length_m", ctypes.c_double),
         ("jc_limit_a_m2", ctypes.c_double),
         ("yield_strength_pa", ctypes.c_double),
-        ("gravity_tether_on", ctypes.c_uint32),
+        ("enablers", ctypes.c_uint32),
         ("num_output_frames", ctypes.c_uint32),
     ]
 
     @classmethod
     def defaults(cls, frames: int = 10000) -> "SimConfig":
-        return cls(2.70, 10000.0, 1.2e7, 1.0e20, 1.5e18, 1, frames)
+        return cls(2.70, 10000.0, 1.2e7, 1.0e25, 1.5e18, 7, frames)
 
 
 def load_octocore() -> Any:

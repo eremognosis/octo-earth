@@ -10,6 +10,7 @@ namespace octo {
     constexpr std::uint8_t LifeCompromised   = 16;
     constexpr std::uint8_t JourneyIncomplete = 32;
 
-    std::uint8_t validateRulebook (const OctopusResult &result, bool gravity_tether_on, double surface_delta_g = 0.0);
+    std::uint8_t validateRulebook (const OctopusResult &result, bool propulsion_enabler_on,
+                                   double surface_delta_g = 0.0);
 
 } // namespace octo
