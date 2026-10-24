@@ -14,7 +14,7 @@ int main () {
     cfg.target_au         = 2.70;
     cfg.max_years         = 10000.0;
     cfg.yield_strength_pa = 1.5e18;
-    cfg.enablers = OCTO_ENABLERS_ALL;
+    cfg.enablers          = OCTO_ENABLERS_ALL;
     cfg.num_output_frames = 100;
 
 

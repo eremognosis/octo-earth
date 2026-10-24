@@ -19,15 +19,21 @@ typedef struct {
         double arm_length_m;
         double jc_limit_a_m2;
         double yield_strength_pa;
-        uint32_t enablers; // exactly three permitted bits
+        uint32_t enablers;          // exactly three permitted bits
         uint32_t num_output_frames; // no of frames
 
 } SimConfig;
 
 enum {
-    OCTO_ENABLER_PROPULSION     = 1u,
-    OCTO_ENABLER_STRUCTURE      = 2u,
-    OCTO_ENABLER_SUPERCONDUCTOR = 4u,
+    // Three declared hypothetical assumptions, bounded in the audit:
+    // ACREC, NMEVA, and AGCAHS.
+    OCTO_ENABLER_ANTIMATTER        = 1u,
+    OCTO_ENABLER_MOMENTUM_EXCHANGE = 2u,
+    OCTO_ENABLER_HABITAT_SHIELD    = 4u,
+    // ABI-compatible names used by older clients.
+    OCTO_ENABLER_PROPULSION     = OCTO_ENABLER_ANTIMATTER,
+    OCTO_ENABLER_STRUCTURE      = OCTO_ENABLER_MOMENTUM_EXCHANGE,
+    OCTO_ENABLER_SUPERCONDUCTOR = OCTO_ENABLER_HABITAT_SHIELD,
     OCTO_ENABLERS_ALL           = OCTO_ENABLER_PROPULSION | OCTO_ENABLER_STRUCTURE | OCTO_ENABLER_SUPERCONDUCTOR
 };
 

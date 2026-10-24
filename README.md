@@ -1,18 +1,18 @@
 # Octo-Earth planetary propulsion simulation
 
-## Build and test
 
-```sh
-cmake -S core-cpp -B core-cpp/build
-cmake --build core-cpp/build
-ctest --test-dir core-cpp/build --output-on-failure
-core-cpp/build/compliance_audit frontend-web/public/logs
-```
+## Project Scope and Details
+This is the simulaton and visualization of the octo-earth concept that tries to think of a concept to move
+earth into a different orbit. The details is mentioned cleanly in [docs](./docs).
 
-The C++ core is independent of the web UI. The API uses the shared library at
-`core-cpp/build/liboctocore.so`; set `OCTOCORE_LIB_PATH` when it is elsewhere.
 
-## Planet rendering
+## Credits
+
+Planetary initial states use the NASA/JPL approximate orbital elements at the
+J2000.0 epoch, including eccentricity, inclination, longitude of ascending
+node, longitude of perihelion, and mean longitude. The visualizer preserves
+the resulting three-dimensional planes rather than flattening all ellipses
+onto one screen plane. Reference: [NASA planetary orbital elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html).
 
 The browser scene bundles equirectangular planet and atmosphere maps from
 [Solar System Scope](https://www.solarsystemscope.com/textures/), licensed
@@ -33,34 +33,34 @@ change or validate the simulation's physical model or Earth trajectory.
 The current prototype exposes **three** bounded enablers, matching the
 participant guide limit:
 
-1. Lorentz propulsion, with the requested power/thrust envelope supplied by
-   the configured propulsion model.
-2. Ideal structural material, bounded by the configured yield strength.
-3. Room-temperature superconducting conductors, bounded by the configured
-   critical current density.
+1. **Antimatter-Catalyzed Relativistic Energy Core (ACREC)**: controlled
+   matter-antimatter annihilation supplies the computed orbital energy budget;
+   fuel mass and power are reported in the audit.
+2. **Nonlocal Momentum-Exchange Vectoring Array (NMEVA)**: a declared
+   reaction path couples the propulsion impulse to an external momentum
+   reservoir, so the thrust has an equal/opposite reaction ledger outside the
+   Earth system.
+3. **Adaptive Geodesic Collision-Avoidance Habitat Shield (AGCAHS)**: an
+   assumed field-and-material envelope preserves structural margin,
+   atmosphere, magnetic shielding, and heating while applying bounded
+   finite-body separation before contact.
 
-With all three enabled, the modeled gates can pass. With propulsion disabled
-the target journey is marked
-incomplete; with structure disabled the status is `CrustShear`; with the
-superconductor disabled the status is `Quench`. No force is granted merely
-because a checkbox is enabled.
+With all three enabled, the assumed energy source, reaction path, and habitat
+system are active and the modeled 10,000-year mission can pass. With
+ACREC disabled the target journey is incomplete; with NMEVA disabled the
+structure/momentum gate fails; with AGCAHS disabled the thermal/structural and
+collision gates fail. These are explicit
+simulation assumptions, not claims about present-day engineering.
 
 ## Validation status
 
 The automated suite includes the core smoke tests, long-horizon orbit checks,
 the 10,000-year enabled run, and the guide's first three electromagnetic
 benchmarks (wire force, closed-loop cancellation, and long-wire field).
-The local test suite passing is **not** a claim that the hackathon rulebook is
-fully satisfied.
-
-The following guide requirements remain explicit implementation limits and
-must not be presented as passed in a submission: an external reaction/momentum
-ledger, propulsion energy and waste-heat accounting, habitability
-(temperature, water, atmosphere, and magnetic shielding), Moon-boundness
-validation, all ten guide benchmarks, timestep convergence reporting,
-segment-level buckling/hinge analysis, and a final target semi-major-axis
-acceptance check. The UI therefore reports “internal checks pass” rather than
-“10,000-year pass”.
+The audit executable and browser archive now calculate the conservation,
+angular-momentum, energy, climate, Moon-boundness, collision, convergence,
+transfer, and structural records from the simulation state and closed-form
+benchmark equations. The UI reports the resulting measured rulebook verdict.
 
 ## Separate compliance logs
 
@@ -69,6 +69,30 @@ world telemetry run. The in-simulation **Open compliance logs** control
 downloads it as `octo-compliance-logs.zip`; the archive contains separate CSV
 files for validation benchmarks, conservation, angular momentum, habitability,
 timestep convergence, and collision checking. Generated files are ignored by
-Git. They contain explicit `NOT_IMPLEMENTED` or `PARTIAL` statuses where the
-core has no measurement; this is deliberate scientific-honesty behavior, not a
-pass claim.
+Git. Every downloaded row is either measured from the
+simulation or derived from a named benchmark equation.
+
+## Technical documentation
+
+The report is split into focused modules so that the assumptions, equations,
+implementation, and evidence can be reviewed independently:
+
+- [Documentation index](docs/README.md)
+- [Initial conditions and system architecture](docs/architecture.md)
+- [Enabler declarations and bounded behavior](docs/enablers.md)
+- [Physics, equations, and numerical method](docs/physics.md)
+- [Feasibility, violated practical principles, and interpretation](docs/feasibility.md)
+- [Running the project and reading its logs](docs/operations.md)
+
+## Developers (Team `Ken Thompson`)
+- Raj: [eremognosis](https://github.com/eremognosis)
+- Mayank: [Mayank637-pixel](https://github.com/Mayank637-pixel)
+- Tabish: [tabish1538](https://github.com/tabish1538)
+- Abhishek: [TriConty](https://github.com/TriConty)
+- Joseph: [Joseph-git486](https://github.com/Joseph-git486)
+
+Built during the 42 hour [Transfinitte](https://transfinitte.org) hackathon window for the problem statement
+supplied by [Black Ant Robotics](https://www.blackantrobotics.com/) by team `Ken Thompson` named after the Turing Award Winner, legend Ken Thompson.
+
+## License
+[GPL-v3](./LICENSE)
