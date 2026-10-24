@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Line, OrbitControls } from "@react-three/drei";
+import { Line, OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { ScaleData } from "../components/DualScaleHUD";
 
 export type Frame = {
   time: number;
@@ -20,6 +21,7 @@ export interface HeliocentricSceneProps {
   tRef: React.MutableRefObject<number>;
   onFrame: (frameIndex: number) => void;
   activeFrame: number;
+  onScaleChange?: (scale: ScaleData) => void;
 }
 
 const BODY_META: { name: string; color: string; radius: number; texture: string }[] = [
@@ -52,7 +54,7 @@ const ARM_SEGMENT_COUNT = 24;
 const ARM_SEGMENT_LENGTH = ARM_LENGTH / ARM_SEGMENT_COUNT;
 const ARM_RADIUS = 0.012;
 const MOON_ORBIT_RADIUS = EARTH_DISPLAY_RADIUS * 13;
-const MOON_ORBIT_ANGULAR_SPEED = (Math.PI * 2) / 36;
+const MOON_SIDEREAL_PERIOD_YEARS = 27.322 / 365.25; // ~0.0748 years per lunar orbit (~13.37 orbits/year)
 
 function ArticulatedArm({ phase }: { phase: number }) {
   const segments = useRef<(THREE.Group | null)[]>([]);
@@ -181,14 +183,22 @@ export function HeliocentricScene({
   tRef,
   onFrame,
   activeFrame,
+  onScaleChange,
 }: HeliocentricSceneProps) {
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const framesRef = useRef(frames);
+  framesRef.current = frames;
   const failurePulse = useRef<THREE.Mesh | null>(null);
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const moonOrbitRef = useRef<THREE.Group | null>(null);
-  const moonPhase = useRef(0);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
-  const { camera } = useThree();
+  const lastDistRef = useRef<number>(-1);
+  const lastHeightRef = useRef<number>(-1);
+  const onScaleChangeRef = useRef(onScaleChange);
+  onScaleChangeRef.current = onScaleChange;
+  const { camera, size } = useThree();
   const textures = useLoader(THREE.TextureLoader, TEXTURE_URLS);
   const [earthClouds, venusAtmosphere, saturnRings, earthNight] = textures.slice(BODY_META.length);
   useEffect(() => {
@@ -239,7 +249,7 @@ export function HeliocentricScene({
     });
   }, [bodyPositions, frames, activeFrame]);
 
-  useFrame((_, dt) => {
+  useFrame(({ clock }, dt) => {
     const numFrames = frames.length;
     if (numFrames === 0) return;
 
@@ -269,15 +279,19 @@ export function HeliocentricScene({
       if (b === 9) {
         const earth = meshRefs.current[2];
         if (earth) {
-          if (playing) moonPhase.current += dt * MOON_ORBIT_ANGULAR_SPEED;
-          const phase = moonPhase.current;
+          // Drive phase from tRef (always-fresh ref) + framesRef — no stale closures
+          const totalFrames = framesRef.current.length;
+          const totalYears = framesRef.current[totalFrames - 1]?.time ?? 1;
+          const framesPerMoonOrbit = (MOON_SIDEREAL_PERIOD_YEARS / totalYears) * totalFrames;
+          const phase = (tRef.current / framesPerMoonOrbit) * Math.PI * 2;
+          const inclination = Math.sin(phase * 0.0748) * MOON_ORBIT_RADIUS * 0.12;
           mesh.position.set(
             earth.position.x + Math.cos(phase) * MOON_ORBIT_RADIUS,
-            earth.position.y,
+            earth.position.y + inclination,
             earth.position.z + Math.sin(phase) * MOON_ORBIT_RADIUS
           );
           moonOrbitRef.current?.position.copy(earth.position);
-          mesh.rotation.y += dt * 0.08;
+          mesh.rotation.y = phase;
           continue;
         }
       }
@@ -303,6 +317,44 @@ export function HeliocentricScene({
       camera.position.add(delta);
       controls.target.copy(desiredTarget);
       controls.update();
+    }
+
+    // Dynamic zoom-based dual scale calculation
+    if (onScaleChangeRef.current) {
+      const target = controls?.target ?? new THREE.Vector3(0, 0, 0);
+      const dist = camera.position.distanceTo(target);
+      const canvasHeight = size.height > 0 ? size.height : 900;
+      if (
+        Math.abs(dist - lastDistRef.current) > 0.01 ||
+        Math.abs(canvasHeight - lastHeightRef.current) > 2
+      ) {
+        lastDistRef.current = dist;
+        lastHeightRef.current = canvasHeight;
+
+        const fov = (camera as THREE.PerspectiveCamera).fov ?? 50;
+        const visibleHeight = 2 * dist * Math.tan((fov * Math.PI) / 360);
+        const sceneUnitsPerPixel = visibleHeight / canvasHeight;
+
+        const barPx = 100;
+        const barSceneUnits = barPx * sceneUnitsPerPixel;
+        const orbitAu = barSceneUnits * 0.1;
+        const orbitKm = orbitAu * 149597870.7;
+        const planetKm = barSceneUnits * 15945.3425;
+        const planetAu = planetKm / 149597870.7;
+        const ratio = 938.192;
+        const zoomFactor = 72.11 / (dist > 0.001 ? dist : 0.001);
+
+        onScaleChangeRef.current({
+          orbitAu,
+          orbitKm,
+          planetKm,
+          planetAu,
+          ratio,
+          cameraDistance: dist,
+          zoomFactor,
+          barWidthPx: barPx,
+        });
+      }
     }
 
     if (i0 !== lastReportedIntFrame.current) {
@@ -419,9 +471,51 @@ export function HeliocentricScene({
               />
             </mesh>
           )}
+          {/* Planet / body label */}
+          <Html
+            position={[0, body.radius * 2.0 + 0.06, 0]}
+            center
+            distanceFactor={18}
+            zIndexRange={[100, 0]}
+            style={{
+              pointerEvents: "none",
+              userSelect: "none",
+              whiteSpace: "nowrap",
+              fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+              fontSize: "11px",
+              fontWeight: "600",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: body.name === "Sun" ? "#fde68a"
+                : body.name === "Moon" ? "#cbd5e1"
+                : body.name === "Earth" ? "#93c5fd"
+                : body.name === "Mars" ? "#fca5a5"
+                : body.name === "Venus" ? "#fde68a"
+                : body.name === "Jupiter" ? "#fdba74"
+                : body.name === "Saturn" ? "#fef08a"
+                : body.name === "Uranus" ? "#7dd3fc"
+                : body.name === "Neptune" ? "#a5b4fc"
+                : "#94a3b8",
+              padding: "2px 7px",
+              background: "rgba(2, 8, 18, 0.55)",
+              borderRadius: "4px",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+              backdropFilter: "blur(4px)",
+              lineHeight: "1.4",
+            }}
+          >
+            {body.name}
+          </Html>
         </mesh>
       ))}
       <EarthRingStructure earthMeshRef={meshRefs} />
     </group>
   );
 }
+
+
+
+
+
+
+

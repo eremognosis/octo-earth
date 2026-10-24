@@ -1,6 +1,7 @@
 import { FormEvent, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Frame, HeliocentricScene } from "./scene/HeliocentricScene";
+import { DualScaleHUD, ScaleData } from "./components/DualScaleHUD";
 
 const bodies = ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Sun", "Moon"];
 type Config = {
@@ -50,6 +51,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [auditOpen, setAuditOpen] = useState(false);
+  const [scaleData, setScaleData] = useState<ScaleData | null>(null);
   const current = frames[selected];
   const enabledCount = [
     config.propulsion_enabler, config.structural_enabler, config.superconducting_enabler,
@@ -120,8 +122,10 @@ export function App() {
                 tRef={tRef}
                 onFrame={setSelected}
                 activeFrame={selected}
+                onScaleChange={setScaleData}
               />
             </Canvas>
+            <DualScaleHUD scale={scaleData} />
             <div style={{
               position: "absolute", zIndex: 2, left: 340, bottom: 8,
               padding: "5px 8px", borderRadius: 4,
