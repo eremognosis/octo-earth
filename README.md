@@ -12,6 +12,16 @@ core-cpp/build/compliance_audit frontend-web/public/logs
 The C++ core is independent of the web UI. The API uses the shared library at
 `core-cpp/build/liboctocore.so`; set `OCTOCORE_LIB_PATH` when it is elsewhere.
 
+## Planet rendering
+
+The browser scene bundles equirectangular planet and atmosphere maps from
+[Solar System Scope](https://www.solarsystemscope.com/textures/), licensed
+under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), and the Moon
+color map from NASA's [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/). The
+maps load locally at runtime, so the visualization does not depend on an
+external image server. Required credits and source notes are in
+`frontend-web/public/textures/planets/ATTRIBUTION.txt`.
+
 ## Declared hypothetical enablers
 
 The current prototype exposes **three** bounded enablers, matching the

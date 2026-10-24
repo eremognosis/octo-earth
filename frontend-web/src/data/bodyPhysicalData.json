@@ -1,0 +1,94 @@
+{
+  "Sun": {
+    "horizonsId": "10",
+    "name": "Sun",
+    "massKg": 1.9885e30,
+    "equatorialRadiusKm": 695700.0,
+    "rotationPeriodHours": 609.12,
+    "obliquityDeg": 7.25,
+    "isEmissive": true,
+    "color": "#ffaa00",
+    "texture": "/textures/planets/sun.jpg",
+    "baseVisualRadius": 2.2
+  },
+  "Mercury": {
+    "horizonsId": "199",
+    "name": "Mercury",
+    "massKg": 3.3011e23,
+    "equatorialRadiusKm": 2439.7,
+    "rotationPeriodHours": 1407.6,
+    "obliquityDeg": 0.034,
+    "isEmissive": false,
+    "texture": "/textures/planets/mercury.jpg",
+    "baseVisualRadius": 0.38
+  },
+  "Venus": {
+    "horizonsId": "299",
+    "name": "Venus",
+    "massKg": 4.8675e24,
+    "equatorialRadiusKm": 6051.8,
+    "rotationPeriodHours": -5832.5,
+    "obliquityDeg": 177.36,
+    "isEmissive": false,
+    "texture": "/textures/planets/venus.jpg",
+    "baseVisualRadius": 0.95
+  },
+  "Earth": {
+    "horizonsId": "399",
+    "name": "Earth",
+    "massKg": 5.9722e24,
+    "equatorialRadiusKm": 6378.137,
+    "rotationPeriodHours": 23.9344,
+    "obliquityDeg": 23.44,
+    "isEmissive": false,
+    "texture": "/textures/planets/earth.jpg",
+    "baseVisualRadius": 1.0
+  },
+  "Moon": {
+    "horizonsId": "301",
+    "name": "Moon",
+    "massKg": 7.342e22,
+    "equatorialRadiusKm": 1737.4,
+    "rotationPeriodHours": 655.7,
+    "obliquityDeg": 6.68,
+    "isEmissive": false,
+    "texture": "/textures/planets/moon.jpg",
+    "baseVisualRadius": 0.27
+  },
+  "Mars": {
+    "horizonsId": "499",
+    "name": "Mars",
+    "massKg": 6.4171e23,
+    "equatorialRadiusKm": 3389.5,
+    "rotationPeriodHours": 24.6229,
+    "obliquityDeg": 25.19,
+    "isEmissive": false,
+    "texture": "/textures/planets/mars.jpg",
+    "baseVisualRadius": 0.53
+  },
+  "Jupiter": {
+    "horizonsId": "599",
+    "name": "Jupiter",
+    "massKg": 1.8982e27,
+    "equatorialRadiusKm": 71492.0,
+    "rotationPeriodHours": 9.925,
+    "obliquityDeg": 3.13,
+    "isEmissive": false,
+    "texture": "/textures/planets/jupiter.jpg",
+    "baseVisualRadius": 1.8
+  },
+  "Saturn": {
+    "horizonsId": "699",
+    "name": "Saturn",
+    "massKg": 5.6834e26,
+    "equatorialRadiusKm": 60268.0,
+    "rotationPeriodHours": 10.656,
+    "obliquityDeg": 26.73,
+    "hasRings": true,
+    "ringInnerRadius": 1.2,
+    "ringOuterRadius": 2.3,
+    "texture": "/textures/planets/saturn.jpg",
+    "ringTexture": "/textures/planets/saturn_ring.png",
+    "baseVisualRadius": 1.5
+  }
+}
