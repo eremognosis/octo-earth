@@ -84,6 +84,11 @@ implementation, and evidence can be reviewed independently:
 - [Feasibility, violated practical principles, and interpretation](docs/feasibility.md)
 - [Running the project and reading its logs](docs/operations.md)
 
+
+## How the visualization looks
+[!img](./img/vis.png)
+
+
 ## Developers (Team `Ken Thompson`)
 - Raj: [eremognosis](https://github.com/eremognosis)
 - Mayank: [Mayank637-pixel](https://github.com/Mayank637-pixel)
