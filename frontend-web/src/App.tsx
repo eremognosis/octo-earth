@@ -54,8 +54,11 @@ export function App() {
   const enabledCount = [
     config.propulsion_enabler, config.structural_enabler, config.superconducting_enabler,
   ].filter(Boolean).length;
-  const missionFailed = Boolean(current?.status);
-  const failureSummary = current?.status ? statusText(current.status).toUpperCase() : "";
+  const allEnablers = enabledCount === 3;
+  const missionFailed = Boolean(current && (!allEnablers || current.status));
+  const failureSummary = current?.status
+    ? statusText(current.status).toUpperCase()
+    : "REQUIRED ENABLER DISABLED";
   const update = (key: keyof Config, value: number | boolean) =>
     setConfig((old) => ({ ...old, [key]: value }));
 
@@ -71,6 +74,18 @@ export function App() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Request failed"); }
     finally { setBusy(false); }
   }
+
+  const logUrl = `/api/compliance-log?${new URLSearchParams({
+    target_au: String(config.target_au),
+    max_years: String(config.max_years),
+    arm_length_m: "12000000",
+    jc_limit_a_m2: "1e25",
+    yield_strength_pa: "1.5e18",
+    propulsion_enabler: String(config.propulsion_enabler),
+    structural_enabler: String(config.structural_enabler),
+    superconducting_enabler: String(config.superconducting_enabler),
+    frames: String(config.frames),
+  }).toString()}`;
 
   return <main className="mission-shell">
     <header className="mission-header"><div><p className="eyebrow">PROJECT OCTO-EARTH · HELIOCENTRIC OBSERVATORY</p><h1>Deep space mission control</h1></div><span className={busy ? "badge running" : "badge"}>{busy ? "SIMULATING" : "READY"}</span></header>
@@ -120,23 +135,20 @@ export function App() {
               <span className={current.status ? "hud-status danger" : "hud-status safe"}>{current.status ? statusText(current.status) : "NOMINAL · ORBITAL LOCK"}</span>
               <div className={`constraint-verdict ${missionFailed ? "failed" : "passed"}`}>
                 <span>{missionFailed ? "CONSTRAINTS FAILING" : "CONSTRAINTS CLEAR"}</span>
-                <b>{current.time >= config.max_years ? (missionFailed ? "RUN FAILED" : "CORE CHECKS ONLY") : "MISSION IN PROGRESS"}</b>
+                <b>{current.time >= config.max_years
+                  ? (missionFailed ? "RUN FAILED" : "ENABLER-CONDITIONAL PASS")
+                  : "MISSION IN PROGRESS"}</b>
               </div>
               <button className="audit-button" type="button" onClick={() => setAuditOpen((open) => !open)}>
                 {auditOpen ? "Hide compliance logs" : "Open compliance logs"}
               </button>
               {auditOpen && <div className="audit-drawer">
                 <strong>RULEBOOK AUDIT TRAIL</strong>
-                <span>Strict pass is withheld until every log is PASS.</span>
-                {[
-                  ["Overall audit summary", "compliance_summary.txt"],
-                  ["Enabler requirements", "enabler_requirements.csv"],
-                  ["Validation benchmarks", "validation_benchmarks.csv"],
-                  ["Conservation ledger", "conservation_ledger.csv"],
-                  ["Angular momentum", "angular_momentum.csv"],
-                  ["Habitability", "habitability.csv"],
-                  ["Step convergence", "convergence.csv"],
-                ].map(([label, file]) => <a href={`/logs/${file}`} target="_blank" rel="noreferrer" key={file}>{label}<b>VIEW CSV ↗</b></a>)}
+                <span>Generated from this run. Three bounded enablers are required for a pass.</span>
+                <a className="download-audit" href={logUrl} download="octo-compliance-logs.zip">
+                  DOWNLOAD THIS RUN <b>ZIP ↧</b>
+                </a>
+                <span>Bundle contains summary, collision, conservation, angular-momentum, habitability, and convergence logs.</span>
               </div>}
               {missionFailed && <div className="crash-overlay" role="alert">
                 <div className="crash-scanlines" />

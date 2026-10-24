@@ -48,9 +48,11 @@ acceptance check. The UI therefore reports “internal checks pass” rather tha
 
 ## Separate compliance logs
 
-The web application exposes generated audit artifacts under `/logs/` through the
-in-simulation **Open compliance logs** control. These are separate CSV files
-for validation benchmarks, conservation, angular momentum, habitability, and
-timestep convergence. They contain explicit `NOT_IMPLEMENTED` or `PARTIAL`
-statuses where the core has no measurement; this is deliberate
-scientific-honesty behavior, not a pass claim.
+Each browser simulation generates a fresh audit bundle in memory from the same
+world telemetry run. The in-simulation **Open compliance logs** control
+downloads it as `octo-compliance-logs.zip`; the archive contains separate CSV
+files for validation benchmarks, conservation, angular momentum, habitability,
+timestep convergence, and collision checking. Generated files are ignored by
+Git. They contain explicit `NOT_IMPLEMENTED` or `PARTIAL` statuses where the
+core has no measurement; this is deliberate scientific-honesty behavior, not a
+pass claim.
