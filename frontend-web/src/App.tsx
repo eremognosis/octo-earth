@@ -122,6 +122,21 @@ export function App() {
                 activeFrame={selected}
               />
             </Canvas>
+            <div style={{
+              position: "absolute", zIndex: 2, left: 340, bottom: 8,
+              padding: "5px 8px", borderRadius: 4,
+              background: "rgba(5, 14, 28, .82)", color: "#7892aa",
+              fontSize: 9, pointerEvents: "auto",
+            }}>
+              Planet maps:{" "}
+              <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer" style={{ color: "#b9eaff" }}>
+                Solar System Scope · CC BY 4.0
+              </a>
+              {" · Moon: "}
+              <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noreferrer" style={{ color: "#b9eaff" }}>
+                NASA SVS
+              </a>
+            </div>
             <div className="earth-hud">
               <span className="hud-label"><i className="live-dot" /> EARTH TELEMETRY</span>
               <strong>{current.time.toFixed(2)} <small>YEARS ELAPSED</small></strong>

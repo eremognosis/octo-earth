@@ -1,5 +1,5 @@
-import { useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -22,17 +22,25 @@ export interface HeliocentricSceneProps {
   activeFrame: number;
 }
 
-const BODY_META = [
-  { name: "Mercury", color: "#a8a8a8", radius: 0.25 },
-  { name: "Venus", color: "#e6c280", radius: 0.35 },
-  { name: "Earth", color: "#3b82f6", radius: 0.40 },
-  { name: "Mars", color: "#ef4444", radius: 0.30 },
-  { name: "Jupiter", color: "#d97706", radius: 1.10 },
-  { name: "Saturn", color: "#eab308", radius: 0.95 },
-  { name: "Uranus", color: "#38bdf8", radius: 0.70 },
-  { name: "Neptune", color: "#6366f1", radius: 0.70 },
-  { name: "Sun", color: "#facc15", radius: 2.00 },
-  { name: "Moon", color: "#e5e7eb", radius: 0.15 },
+const BODY_META: { name: string; color: string; radius: number; texture: string }[] = [
+  { name: "Mercury", color: "#a8a8a8", radius: 0.25, texture: "/textures/planets/mercury.jpg" },
+  { name: "Venus", color: "#e6c280", radius: 0.35, texture: "/textures/planets/venus.jpg" },
+  { name: "Earth", color: "#3b82f6", radius: 0.40, texture: "/textures/planets/earth-day.jpg" },
+  { name: "Mars", color: "#ef4444", radius: 0.30, texture: "/textures/planets/mars.jpg" },
+  { name: "Jupiter", color: "#d97706", radius: 1.10, texture: "/textures/planets/jupiter.jpg" },
+  { name: "Saturn", color: "#eab308", radius: 0.95, texture: "/textures/planets/saturn.jpg" },
+  { name: "Uranus", color: "#38bdf8", radius: 0.70, texture: "/textures/planets/uranus.jpg" },
+  { name: "Neptune", color: "#6366f1", radius: 0.70, texture: "/textures/planets/neptune.jpg" },
+  { name: "Sun", color: "#facc15", radius: 2.00, texture: "/textures/planets/sun.jpg" },
+  { name: "Moon", color: "#e5e7eb", radius: 0.15, texture: "/textures/planets/moon.jpg" },
+];
+
+const TEXTURE_URLS = [
+  ...BODY_META.map((body) => body.texture),
+  "/textures/planets/earth-clouds.jpg",
+  "/textures/planets/venus-atmosphere.jpg",
+  "/textures/planets/saturn-rings.png",
+  "/textures/planets/earth-night.jpg",
 ];
 
 function simAuToSceneVec(posAu: number[]): [number, number, number] {
@@ -57,6 +65,20 @@ export function HeliocentricScene({
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const { camera } = useThree();
+  const textures = useLoader(THREE.TextureLoader, TEXTURE_URLS);
+  const [earthClouds, venusAtmosphere, saturnRings, earthNight] = textures.slice(BODY_META.length);
+  useEffect(() => {
+    textures.forEach((texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+    });
+    earthClouds.colorSpace = THREE.NoColorSpace;
+    saturnRings.colorSpace = THREE.NoColorSpace;
+    saturnRings.center.set(0.5, 0.5);
+    saturnRings.rotation = Math.PI / 2;
+    textures.forEach((texture) => {
+      texture.needsUpdate = true;
+    });
+  }, [earthClouds, saturnRings, textures]);
   const bodyPositions = useMemo(() => {
     if (frames.length === 0) return [];
     return BODY_META.map((_, bodyIdx) =>
@@ -123,6 +145,7 @@ export function HeliocentricScene({
       const p0 = trail[i0];
       const p1 = trail[i1];
 
+      mesh.rotation.y += dt * (b === 8 ? 0.08 : b === 2 ? 0.35 : 0.16);
       mesh.position.set(
         p0[0] + (p1[0] - p0[0]) * alpha,
         p0[1] + (p1[1] - p0[1]) * alpha,
@@ -152,9 +175,9 @@ export function HeliocentricScene({
 
   return (
     <group>
-      <ambientLight intensity={1.2} />
-      <pointLight position={[0, 0, 0]} intensity={3} color="#fff4cf" />
-      <directionalLight position={[20, 30, 40]} intensity={2.5} color="#d7eaff" />
+      <ambientLight intensity={0.28} />
+      <pointLight position={[0, 0, 0]} intensity={25} color="#fff4cf" />
+      <directionalLight position={[20, 30, 40]} intensity={0.55} color="#d7eaff" />
       <mesh ref={failurePulse} visible={false}>
         <sphereGeometry args={[3.2, 20, 20]} />
         <meshBasicMaterial color="#ff315d" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
@@ -183,14 +206,73 @@ export function HeliocentricScene({
             meshRefs.current[b] = el;
           }}
         >
-          <sphereGeometry args={[body.radius, 24, 24]} />
-          <meshStandardMaterial
-            color={body.color}
-            roughness={0.78}
-            metalness={0.06}
-            emissive={body.color}
-            emissiveIntensity={b === 8 ? 1.5 : 0.12}
-          />
+          <sphereGeometry args={[body.radius, 64, 64]} />
+          {body.name === "Sun" ? (
+            <>
+              <meshBasicMaterial map={textures[b]} toneMapped={false} />
+              <mesh scale={1.15}>
+                <sphereGeometry args={[body.radius, 64, 64]} />
+                <meshBasicMaterial
+                  color="#ff8a24"
+                  transparent
+                  opacity={0.12}
+                  depthWrite={false}
+                  blending={THREE.AdditiveBlending}
+                  toneMapped={false}
+                />
+              </mesh>
+            </>
+          ) : (
+            <meshStandardMaterial
+              map={textures[b]}
+              roughness={body.name === "Earth" ? 0.68 : 0.92}
+              emissive={body.name === "Earth" ? "#fff" : "#000"}
+              emissiveMap={body.name === "Earth" ? earthNight : undefined}
+              emissiveIntensity={body.name === "Earth" ? 0.2 : 1}
+              metalness={0}
+            />
+          )}
+          {body.name === "Earth" && (
+            <mesh scale={1.06}>
+              <sphereGeometry args={[body.radius, 64, 64]} />
+              <meshBasicMaterial
+                color="#ffffff"
+                alphaMap={earthClouds}
+                transparent
+                opacity={0.68}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
+          {body.name === "Venus" && (
+            <mesh scale={1.012}>
+              <sphereGeometry args={[body.radius, 64, 64]} />
+              <meshStandardMaterial
+                map={venusAtmosphere}
+                color="#fff2d4"
+                roughness={1}
+                transparent
+                opacity={0.3}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
+          {body.name === "Saturn" && (
+            <mesh rotation={[Math.PI / 2 + 0.12, 0, 0]}>
+              <ringGeometry args={[1.05, 2.18, 256]} />
+              <meshStandardMaterial
+                map={saturnRings}
+                alphaMap={saturnRings}
+                color="#d7c59e"
+                roughness={0.95}
+                metalness={0}
+                side={THREE.DoubleSide}
+                transparent
+                opacity={0.92}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
         </mesh>
       ))}
     </group>

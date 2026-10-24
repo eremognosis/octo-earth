@@ -1,0 +1,13 @@
+Planet surface and atmosphere maps (Mercury, Venus, Earth day/night/clouds,
+Mars, Jupiter, Saturn and rings, Uranus, Neptune, Sun):
+Solar System Scope, https://www.solarsystemscope.com/textures/
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+Required credit: "Planet textures: Solar System Scope, CC BY 4.0".
+
+Moon color map:
+NASA Scientific Visualization Studio, CGI Moon Kit
+https://svs.gsfc.nasa.gov/4720/
+Lunar Reconnaissance Orbiter Camera (LROC) and Lunar Orbiter Laser Altimeter
+(LOLA) data; map prepared by Ernie Wright. NASA media usage guidelines:
+https://www.nasa.gov/nasa-brand-center/images-and-media/
