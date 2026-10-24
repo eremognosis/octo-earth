@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: "0.0.0.0",
+      allowedHosts: [
+        "octo-earth-web.onrender.com",
+        ".onrender.com"
+      ],
       proxy: {
         "/api": apiUrl,
         "/health": apiUrl,
