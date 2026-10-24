@@ -56,7 +56,6 @@ export function HeliocentricScene({
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const { camera } = useThree();
-
   const bodyPositions = useMemo(() => {
     if (frames.length === 0) return [];
     return BODY_META.map((_, bodyIdx) =>
@@ -146,6 +145,9 @@ export function HeliocentricScene({
 
   return (
     <group>
+      <ambientLight intensity={1.2} />
+      <pointLight position={[0, 0, 0]} intensity={3} color="#fff4cf" />
+      <directionalLight position={[20, 30, 40]} intensity={2.5} color="#d7eaff" />
       <OrbitControls ref={controlsRef} makeDefault />
       <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
 
@@ -171,7 +173,13 @@ export function HeliocentricScene({
           }}
         >
           <sphereGeometry args={[body.radius, 24, 24]} />
-          <meshBasicMaterial color={body.color} />
+          <meshStandardMaterial
+            color={body.color}
+            roughness={0.78}
+            metalness={0.06}
+            emissive={body.color}
+            emissiveIntensity={b === 8 ? 1.5 : 0.12}
+          />
         </mesh>
       ))}
     </group>

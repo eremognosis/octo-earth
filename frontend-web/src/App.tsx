@@ -86,7 +86,11 @@ export function App() {
         <div className="panel-title"><div><span className="section-kicker">LIVE OBSERVATORY FEED</span><h2>Heliocentric system</h2></div><span>{frames.length} frames</span></div>
         {!current ? <div className="empty">Run a simulation to inspect numerical ephemeris data.</div> : <>
           <div className="space-view">
-            <Canvas camera={{ position: [0, 40, 60], fov: 50 }}>
+            <Canvas
+              camera={{ position: [0, 40, 60], fov: 50 }}
+              dpr={[1, 2]}
+              gl={{ antialias: true, powerPreference: "high-performance", logarithmicDepthBuffer: true }}
+            >
               <HeliocentricScene
                 frames={frames}
                 playing={playing}
