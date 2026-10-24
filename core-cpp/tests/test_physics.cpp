@@ -12,6 +12,9 @@ namespace {
             std::exit (EXIT_FAILURE);
         }
     }
+    octo::Vec3 cross (const octo::Vec3 &a, const octo::Vec3 &b) {
+        return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+    }
 } // namespace
 
 int main () {
@@ -41,5 +44,9 @@ int main () {
     const auto snapshot = world.state ();
     require (std::abs (snapshot.positions_au[0].z) > 1.0e-6 || std::abs (snapshot.positions_au[1].z) > 1.0e-6,
              "inclined planetary orbits produce non-zero z motion");
+    const auto mercury_normal   = cross (snapshot.positions_au[0], snapshot.velocities_au_per_year[0]);
+    const auto venus_normal     = cross (snapshot.positions_au[1], snapshot.velocities_au_per_year[1]);
+    const auto plane_difference = cross (mercury_normal, venus_normal);
+    require (norm (plane_difference) > 1.0e-4, "NASA orbital elements preserve distinct planetary orbital planes");
     require (snapshot.minimum_separation_au > 0.0, "minimum separation is calculated");
 }

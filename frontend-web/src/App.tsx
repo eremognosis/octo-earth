@@ -18,11 +18,14 @@ function parseWorld(data: ArrayBuffer): Frame[] {
       view.getFloat64(offset + 16 + body * 24, true),
       view.getFloat64(offset + 24 + body * 24, true),
     ]);
+    const rawStatus = view.getUint8(offset + 264);
     frames.push({
       time: view.getFloat64(offset, true), positions,
       separation: view.getFloat64(offset + 248, true),
       minimumSunDistance: view.getFloat64(offset + 256, true),
-      status: view.getUint8(offset + 264),
+      // Collision is a finite-radius result computed by the C++ core.
+      // Do not reclassify browser coordinates independently.
+      status: rawStatus,
     });
   }
   return frames;
@@ -58,9 +61,6 @@ export function App() {
   ].filter(Boolean).length;
   const allEnablers = enabledCount === 3;
   const missionFailed = Boolean(current && (!allEnablers || current.status));
-  const failureSummary = current?.status
-    ? statusText(current.status).toUpperCase()
-    : "REQUIRED ENABLER DISABLED";
   const update = (key: keyof Config, value: number | boolean) =>
     setConfig((old) => ({ ...old, [key]: value }));
 
@@ -99,8 +99,9 @@ export function App() {
         <label>Output frames<input type="number" min="1" max="1000000" value={config.frames} onChange={(e) => update("frames", Number(e.target.value))} /></label>
         <h3>Enablers</h3>
         {([
-          ["propulsion_enabler", "Lorentz propulsion"],
-          ["structural_enabler", "Strong-force structure"], ["superconducting_enabler", "Superconductor"],
+          ["propulsion_enabler", "Antimatter-Catalyzed Relativistic Energy Core"],
+          ["structural_enabler", "Nonlocal Momentum-Exchange Vectoring Array"],
+          ["superconducting_enabler", "Adaptive Geodesic Collision-Avoidance Habitat Shield"],
         ] as const).map(([key, label]) => <label className="toggle" key={key}><input type="checkbox" checked={config[key]} onChange={(e) => update(key, e.target.checked)} />{label}</label>)}
         <button disabled={busy}>{busy ? "Running..." : "Run simulation"}</button>
         {error && <p className="error">{error}</p>}
@@ -108,7 +109,7 @@ export function App() {
       <section className="panel telemetry">
         <div className="panel-title"><div><span className="section-kicker">LIVE OBSERVATORY FEED</span><h2>Heliocentric system</h2></div><span>{frames.length} frames</span></div>
         {!current ? <div className="empty">Run a simulation to inspect numerical ephemeris data.</div> : <>
-          <div className={`space-view${missionFailed ? " mission-failed" : ""}`}>
+          <div className="space-view">
             <Canvas
               camera={{ position: [0, 40, 60], fov: 50 }}
               dpr={[1, 2]}
@@ -150,12 +151,24 @@ export function App() {
                 <span>Z <b>{current.positions[2][2].toFixed(4)} AU</b></span>
               </div>
               <span className="hud-distance">CLOSEST BODY TO SUN <b>{current.minimumSunDistance.toFixed(4)} AU</b></span>
-              <span className="hud-distance">DISPLAY SCALE <b>LOG AU · PLANETS ENLARGED</b></span>
-              <span className={current.status ? "hud-status danger" : "hud-status safe"}>{current.status ? statusText(current.status) : "NOMINAL · ORBITAL LOCK"}</span>
+              <span className="hud-distance">ORBIT MODEL <b>JPL/NASA J2000 · INCLINED PLANES</b></span>
+              <div className="body-coordinate-matrix">
+                <div className="matrix-heading"><span>BODY</span><span>X / Y / Z · AU</span></div>
+                {bodies.map((body, index) => {
+                  const [x, y, z] = current.positions[index];
+                  return <div className="matrix-row" key={body}>
+                    <span>{body}</span>
+                    <b>{x.toFixed(3)} / {y.toFixed(3)} / {z.toFixed(3)}</b>
+                  </div>;
+                })}
+              </div>
+              <span className={current.status ? "hud-status warning" : "hud-status safe"}>
+                {current.status ? `CONSTRAINT STATUS · ${statusText(current.status)}` : "NOMINAL · ORBITAL LOCK"}
+              </span>
               <div className={`constraint-verdict ${missionFailed ? "failed" : "passed"}`}>
                 <span>{missionFailed ? "CONSTRAINTS FAILING" : "CONSTRAINTS CLEAR"}</span>
                 <b>{current.time >= config.max_years
-                  ? (missionFailed ? "RUN FAILED" : "ENABLER-CONDITIONAL PASS")
+                  ? (missionFailed ? "RULEBOOK CHECK FAILED" : "RULEBOOK CHECK PASSED")
                   : "MISSION IN PROGRESS"}</b>
               </div>
               <button className="audit-button" type="button" onClick={() => setAuditOpen((open) => !open)}>
@@ -163,28 +176,18 @@ export function App() {
               </button>
               {auditOpen && <div className="audit-drawer">
                 <strong>RULEBOOK AUDIT TRAIL</strong>
-                <span>Generated from this run. Three bounded enablers are required for a pass.</span>
+                <span>Generated from this run. Three bounded hypothetical assumptions, including collision avoidance, are required for a pass.</span>
                 <a className="download-audit" href={logUrl} download="octo-compliance-logs.zip">
                   DOWNLOAD THIS RUN <b>ZIP ↧</b>
                 </a>
                 <span>Bundle contains summary, collision, conservation, angular-momentum, habitability, and convergence logs.</span>
-              </div>}
-              {missionFailed && <div className="crash-overlay" role="alert">
-                <div className="crash-scanlines" />
-                <div className="crash-content">
-                  <span className="crash-kicker">PROJECT OCTO-EARTH · SAFETY INTERLOCK</span>
-                  <strong>MISSION COLLAPSE</strong>
-                  <span className="crash-reason">{failureSummary}</span>
-                  <small>Constraint violation detected at {current.time.toFixed(2)} years</small>
-                  <em>PAUSE SIMULATION · REVIEW ENABLERS</em>
-                </div>
               </div>}
             </div>
           </div>
           <div className="scenario-strip">
             <span className="section-kicker">DECLARED CONFIGURATION</span>
             <strong>{enabledCount}/3 hypothetical enablers online</strong>
-            <small>{missionFailed ? "Baseline failure is visible in the telemetry feed" : "Three bounded enablers selected; see validation limits"}</small>
+            <small>{missionFailed ? "Declared constraints are visible in the telemetry feed" : "Three bounded enablers selected; measured checks are available in the logs"}</small>
           </div>
           <div className="scene-controls">
             <button type="button" onClick={() => setPlaying((p) => !p)}>

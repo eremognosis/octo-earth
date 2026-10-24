@@ -43,6 +43,8 @@ pnpm-debug.log*
 # Generated compliance logs (created per simulation and downloaded from the UI)
 frontend-web/public/logs/*.csv
 frontend-web/public/logs/*.txt
+compliance-logs/
+frontend-web/tsconfig.tsbuildinfo
 
 # Environment & Temp
 .env

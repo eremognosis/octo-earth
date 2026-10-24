@@ -56,7 +56,7 @@ extern "C" OCTO_EXPORT void run_simulation (const SimConfig *config, TelemetryFr
             frame.arm_hinge_rad[k]  = static_cast<float> (result.arms[k].hinge_angle_rad);
         }
         frame.min_safety_factor = static_cast<float> (result.minimum_safety_factor);
-        frame.status_bitmask = octo::validateRulebook (result, (enablers & OCTO_ENABLER_PROPULSION) != 0, 0.0);
+        frame.status_bitmask    = octo::validateRulebook (result, (enablers & OCTO_ENABLER_PROPULSION) != 0, 0.0);
         frame.status_bitmask    = static_cast<uint8_t> (frame.status_bitmask | world.status);
         frame.padding[0] = frame.padding[1] = frame.padding[2] = 0;
     }

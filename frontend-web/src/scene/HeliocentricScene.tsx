@@ -54,7 +54,16 @@ const ARM_SEGMENT_COUNT = 24;
 const ARM_SEGMENT_LENGTH = ARM_LENGTH / ARM_SEGMENT_COUNT;
 const ARM_RADIUS = 0.012;
 const MOON_ORBIT_RADIUS = EARTH_DISPLAY_RADIUS * 13;
-const MOON_SIDEREAL_PERIOD_YEARS = 27.322 / 365.25; // ~0.0748 years per lunar orbit (~13.37 orbits/year)
+const ORBIT_ELEMENTS = [
+  [0.3871, 0.2056, 7.005, 48.331, 77.458],
+  [0.7233, 0.0068, 3.395, 76.680, 131.602],
+  [1.0000, 0.0167, 0.000, 0.000, 102.938],
+  [1.5237, 0.0934, 1.850, 49.560, -23.944],
+  [5.2029, 0.0484, 1.304, 100.474, 14.728],
+  [9.5367, 0.0539, 2.486, 113.662, 92.599],
+  [19.1892, 0.0473, 0.773, 74.017, 170.954],
+  [30.0699, 0.0086, 1.770, 131.784, 44.965],
+] as const;
 
 function ArticulatedArm({ phase }: { phase: number }) {
   const segments = useRef<(THREE.Group | null)[]>([]);
@@ -175,6 +184,42 @@ function simAuToSceneVec(posAu: number[]): [number, number, number] {
   return [x * scale, z * scale, y * scale];
 }
 
+function displayPosition(posAu: number[], bodyIndex: number, earthAu: number[]): [number, number, number] {
+  if (bodyIndex !== 9) return simAuToSceneVec(posAu);
+  // The physical Moon is only 0.00257 AU from Earth, smaller than the
+  // deliberately enlarged Earth mesh. Separate it for readability only;
+  // telemetry, collision checks, and the coordinate matrix remain physical.
+  const relative = posAu.map((value, axis) => value - earthAu[axis]);
+  const distance = Math.hypot(relative[0], relative[1], relative[2]);
+  if (distance < 1e-9) return simAuToSceneVec(posAu);
+  const visualDistance = MOON_ORBIT_RADIUS / 10;
+  const visualRelative = relative.map((value) => value * visualDistance / distance);
+  return simAuToSceneVec(earthAu.map((value, axis) => value + visualRelative[axis]));
+}
+
+function orbitalGuidePoints(element: readonly number[]): [number, number, number][] {
+  const [a, e, inclinationDeg, nodeDeg, perihelionDeg] = element;
+  const inclination = inclinationDeg * Math.PI / 180;
+  const node = nodeDeg * Math.PI / 180;
+  const omega = (perihelionDeg - nodeDeg) * Math.PI / 180;
+  return Array.from({ length: 145 }, (_, index) => {
+    const theta = index * Math.PI * 2 / 144;
+    const radius = a * (1 - e * e) / (1 + e * Math.cos(theta));
+    const x = radius * Math.cos(theta);
+    const y = radius * Math.sin(theta);
+    const cNode = Math.cos(node), sNode = Math.sin(node);
+    const cOmega = Math.cos(omega), sOmega = Math.sin(omega);
+    const cInclination = Math.cos(inclination), sInclination = Math.sin(inclination);
+    return simAuToSceneVec([
+      (cNode * cOmega - sNode * sOmega * cInclination) * x +
+        (-cNode * sOmega - sNode * cOmega * cInclination) * y,
+      (sNode * cOmega + cNode * sOmega * cInclination) * x +
+        (-sNode * sOmega + cNode * cOmega * cInclination) * y,
+      sOmega * sInclination * x + cOmega * sInclination * y,
+    ]);
+  });
+}
+
 export function HeliocentricScene({
   frames,
   playing,
@@ -186,12 +231,9 @@ export function HeliocentricScene({
   onScaleChange,
 }: HeliocentricSceneProps) {
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
-  const framesRef = useRef(frames);
-  framesRef.current = frames;
   const failurePulse = useRef<THREE.Mesh | null>(null);
   const speedRef = useRef(speed);
   speedRef.current = speed;
-  const moonOrbitRef = useRef<THREE.Group | null>(null);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const lastDistRef = useRef<number>(-1);
@@ -216,9 +258,10 @@ export function HeliocentricScene({
   const bodyPositions = useMemo(() => {
     if (frames.length === 0) return [];
     return BODY_META.map((_, bodyIdx) =>
-      frames.map((f) => simAuToSceneVec(f.positions[bodyIdx]))
+      frames.map((f) => displayPosition(f.positions[bodyIdx], bodyIdx, f.positions[2]))
     );
   }, [frames]);
+  const orbitalGuides = useMemo(() => ORBIT_ELEMENTS.map(orbitalGuidePoints), []);
 
   const recentTrails = useMemo(() => {
     if (frames.length === 0) return [];
@@ -241,7 +284,18 @@ export function HeliocentricScene({
         while (delta > Math.PI) delta -= Math.PI * 2;
         while (delta < -Math.PI) delta += Math.PI * 2;
         sweptDegrees += Math.abs(delta * 180 / Math.PI);
-        points.unshift(bodyPositions[bodyIdx][previous]);
+        const nextPoint = bodyPositions[bodyIdx][current];
+        const previousPoint = bodyPositions[bodyIdx][previous];
+        const chordMidpoint = [
+          (nextPoint[0] + previousPoint[0]) * 0.5,
+          (nextPoint[1] + previousPoint[1]) * 0.5,
+          (nextPoint[2] + previousPoint[2]) * 0.5,
+        ];
+        // Never draw a straight chord through the enlarged Sun. A skipped
+        // segment is preferable to a visual line that falsely implies impact.
+        if (Math.hypot(chordMidpoint[0], chordMidpoint[1], chordMidpoint[2]) > 2.25) {
+          points.unshift(previousPoint);
+        }
         current = previous;
       }
 
@@ -275,26 +329,6 @@ export function HeliocentricScene({
       const mesh = meshRefs.current[b];
       const trail = bodyPositions[b];
       if (!mesh || !trail || trail.length === 0) continue;
-
-      if (b === 9) {
-        const earth = meshRefs.current[2];
-        if (earth) {
-          // Drive phase from tRef (always-fresh ref) + framesRef — no stale closures
-          const totalFrames = framesRef.current.length;
-          const totalYears = framesRef.current[totalFrames - 1]?.time ?? 1;
-          const framesPerMoonOrbit = (MOON_SIDEREAL_PERIOD_YEARS / totalYears) * totalFrames;
-          const phase = (tRef.current / framesPerMoonOrbit) * Math.PI * 2;
-          const inclination = Math.sin(phase * 0.0748) * MOON_ORBIT_RADIUS * 0.12;
-          mesh.position.set(
-            earth.position.x + Math.cos(phase) * MOON_ORBIT_RADIUS,
-            earth.position.y + inclination,
-            earth.position.z + Math.sin(phase) * MOON_ORBIT_RADIUS
-          );
-          moonOrbitRef.current?.position.copy(earth.position);
-          mesh.rotation.y = phase;
-          continue;
-        }
-      }
 
       const p0 = trail[i0];
       const p1 = trail[i1];
@@ -375,13 +409,22 @@ export function HeliocentricScene({
         <meshBasicMaterial color="#ff315d" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
       </mesh>
       <OrbitControls ref={controlsRef} makeDefault />
-      <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
-      <group ref={moonOrbitRef} rotation={[Math.PI / 2, 0, 0]}>
+      <group rotation={[Math.PI / 2, 0, 0]}>
         <mesh>
           <torusGeometry args={[MOON_ORBIT_RADIUS, 0.006, 8, 160]} />
           <meshBasicMaterial color="#a9bdce" transparent opacity={0.28} />
         </mesh>
       </group>
+      {orbitalGuides.map((points, index) => (
+        <Line
+          key={`plane-guide-${BODY_META[index].name}`}
+          points={points}
+          color={BODY_META[index].color}
+          lineWidth={0.7}
+          transparent
+          opacity={0.18}
+        />
+      ))}
 
       {recentTrails.map((points, b) => {
         if (b === 8 || points.length < 2) return null;
@@ -512,10 +555,3 @@ export function HeliocentricScene({
     </group>
   );
 }
-
-
-
-
-
-
-

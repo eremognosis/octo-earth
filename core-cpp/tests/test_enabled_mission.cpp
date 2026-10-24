@@ -12,9 +12,8 @@ int main () {
     run_world_simulation (&config, telemetry.data (), telemetry.size ());
 
     for (std::size_t i = 0; i < telemetry.size (); ++i) {
-        if ((telemetry[i].status_bitmask & octo::Collision) != 0 ||
-            telemetry[i].status_bitmask != 0 || !std::isfinite (telemetry[i].minimum_separation_au) ||
-            telemetry[i].minimum_separation_au <= 0.0) {
+        if ((telemetry[i].status_bitmask & octo::Collision) != 0 || telemetry[i].status_bitmask != 0 ||
+            !std::isfinite (telemetry[i].minimum_separation_au) || telemetry[i].minimum_separation_au <= 0.0) {
             std::cerr << "enabled mission/collision check failed at frame " << i << " (t=" << telemetry[i].time_y
                       << ", status=" << static_cast<unsigned> (telemetry[i].status_bitmask)
                       << ", separation=" << telemetry[i].minimum_separation_au << ")\n";

@@ -16,7 +16,7 @@ namespace octo {
 
     class WorldSimulator {
         public:
-            WorldSimulator (double target_au, double duration_years, std::uint32_t enablers);
+            WorldSimulator (double target_au, double duration_years, std::uint32_t enablers, double step_years = 0.05);
             void advance_to (double time_years);
             WorldState state () const;
 
@@ -24,8 +24,10 @@ namespace octo {
             double target_au_;
             double duration_years_;
             std::uint32_t enablers_;
+            double step_years_;
             double time_years_{};
             WorldState state_{};
+            bool collision_latched_{false};
             void step (double dt_years);
     };
 
