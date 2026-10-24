@@ -21,13 +21,14 @@ WORLD_DTYPE = np.dtype([
     ("time_years", np.float64),
     ("body_pos_au", np.float64, (10, 3)),
     ("minimum_separation_au", np.float64),
+    ("minimum_sun_distance_au", np.float64),
     ("status_bitmask", np.uint8),
     ("padding", np.uint8, (7,)),
 ], align=False)
 
 if TELEMETRY_DTYPE.itemsize != 176:
     raise RuntimeError(f"Telemetry ABI mismatch: NumPy dtype is {TELEMETRY_DTYPE.itemsize} bytes")
-if WORLD_DTYPE.itemsize != 264:
+if WORLD_DTYPE.itemsize != 272:
     raise RuntimeError(f"World ABI mismatch: NumPy dtype is {WORLD_DTYPE.itemsize} bytes")
 
 class SimConfig(ctypes.Structure):

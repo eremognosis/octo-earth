@@ -8,29 +8,31 @@ export type Frame = {
   time: number;
   positions: number[][];
   separation: number;
+  minimumSunDistance: number;
   status: number;
 };
 
 export interface HeliocentricSceneProps {
   frames: Frame[];
   playing: boolean;
-  speed: number; // frames per second
+  speed: number;
   followEarth: boolean;
   tRef: React.MutableRefObject<number>;
   onFrame: (frameIndex: number) => void;
+  activeFrame: number;
 }
 
 const BODY_META = [
   { name: "Mercury", color: "#a8a8a8", radius: 0.25 },
-  { name: "Venus",   color: "#e6c280", radius: 0.35 },
-  { name: "Earth",   color: "#3b82f6", radius: 0.40 },
-  { name: "Mars",    color: "#ef4444", radius: 0.30 },
+  { name: "Venus", color: "#e6c280", radius: 0.35 },
+  { name: "Earth", color: "#3b82f6", radius: 0.40 },
+  { name: "Mars", color: "#ef4444", radius: 0.30 },
   { name: "Jupiter", color: "#d97706", radius: 1.10 },
-  { name: "Saturn",  color: "#eab308", radius: 0.95 },
-  { name: "Uranus",  color: "#38bdf8", radius: 0.70 },
+  { name: "Saturn", color: "#eab308", radius: 0.95 },
+  { name: "Uranus", color: "#38bdf8", radius: 0.70 },
   { name: "Neptune", color: "#6366f1", radius: 0.70 },
-  { name: "Sun",     color: "#facc15", radius: 2.00 },
-  { name: "Moon",    color: "#e5e7eb", radius: 0.15 },
+  { name: "Sun", color: "#facc15", radius: 2.00 },
+  { name: "Moon", color: "#e5e7eb", radius: 0.15 },
 ];
 
 function simAuToSceneVec(posAu: number[]): [number, number, number] {
@@ -48,18 +50,48 @@ export function HeliocentricScene({
   followEarth,
   tRef,
   onFrame,
+  activeFrame,
 }: HeliocentricSceneProps) {
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const { camera } = useThree();
 
-  const bodyTrails = useMemo(() => {
+  const bodyPositions = useMemo(() => {
     if (frames.length === 0) return [];
     return BODY_META.map((_, bodyIdx) =>
       frames.map((f) => simAuToSceneVec(f.positions[bodyIdx]))
     );
   }, [frames]);
+
+  const recentTrails = useMemo(() => {
+    if (frames.length === 0) return [];
+    const end = Math.max(0, Math.min(activeFrame, frames.length - 1));
+
+    return BODY_META.map((_, bodyIdx) => {
+      if (bodyIdx === 8 || end === 0) return [];
+
+      const points = [bodyPositions[bodyIdx][end]];
+      let sweptDegrees = 0;
+      let current = end;
+
+      while (current > 0 && sweptDegrees < 345) {
+        const previous = current - 1;
+        const currentPosition = frames[current].positions[bodyIdx];
+        const previousPosition = frames[previous].positions[bodyIdx];
+        const currentAngle = Math.atan2(currentPosition[1], currentPosition[0]);
+        const previousAngle = Math.atan2(previousPosition[1], previousPosition[0]);
+        let delta = currentAngle - previousAngle;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        sweptDegrees += Math.abs(delta * 180 / Math.PI);
+        points.unshift(bodyPositions[bodyIdx][previous]);
+        current = previous;
+      }
+
+      return points;
+    });
+  }, [bodyPositions, frames, activeFrame]);
 
   useFrame((_, dt) => {
     const numFrames = frames.length;
@@ -79,7 +111,7 @@ export function HeliocentricScene({
 
     for (let b = 0; b < BODY_META.length; b++) {
       const mesh = meshRefs.current[b];
-      const trail = bodyTrails[b];
+      const trail = bodyPositions[b];
       if (!mesh || !trail || trail.length === 0) continue;
 
       const p0 = trail[i0];
@@ -92,15 +124,12 @@ export function HeliocentricScene({
       );
     }
 
-    // Camera Follow logic: index 2 is Earth, index 8 is Sun
     const controls = controlsRef.current;
     const earthMesh = meshRefs.current[2];
     if (controls && earthMesh) {
       const desiredTarget = followEarth
         ? earthMesh.position
         : new THREE.Vector3(0, 0, 0);
-
-      // Shift camera by the same delta so user's zoom/angle relative to target stays locked
       const delta = desiredTarget.clone().sub(controls.target);
       camera.position.add(delta);
       controls.target.copy(desiredTarget);
@@ -120,7 +149,7 @@ export function HeliocentricScene({
       <OrbitControls ref={controlsRef} makeDefault />
       <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
 
-      {bodyTrails.map((points, b) => {
+      {recentTrails.map((points, b) => {
         if (b === 8 || points.length < 2) return null;
         return (
           <Line

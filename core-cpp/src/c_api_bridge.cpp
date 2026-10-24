@@ -85,6 +85,7 @@ extern "C" OCTO_EXPORT void run_world_simulation (const SimConfig *config, World
             frame.body_pos_au[body][2] = world.positions_au[body].z;
         }
         frame.minimum_separation_au = world.minimum_separation_au;
+        frame.minimum_sun_distance_au = world.minimum_sun_distance_au;
         frame.status_bitmask        = world.status;
         for (auto &byte: frame.padding) byte = 0;
     }

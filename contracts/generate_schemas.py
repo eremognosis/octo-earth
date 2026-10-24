@@ -2,7 +2,7 @@
 import sys
 
 FRAME_SIZE = 176
-WORLD_FRAME_SIZE = 264
+WORLD_FRAME_SIZE = 272
 
 TS_TYPINGS = """// AUTO-GENERATED FROM contracts/contract.h - DO NOT EDIT MANUALLY
 export interface SimConfig {
@@ -28,7 +28,7 @@ export interface TelemetryFrame {
 }
 
 export const TELEMETRY_FRAME_BYTE_SIZE = 176;
-export const WORLD_TELEMETRY_FRAME_BYTE_SIZE = 264;
+export const WORLD_TELEMETRY_FRAME_BYTE_SIZE = 272;
 export const WORLD_BODY_NAMES = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune", "sun", "moon"] as const;
 export type WorldBodyName = typeof WORLD_BODY_NAMES[number];
 
@@ -36,6 +36,7 @@ export interface WorldTelemetryFrame {
   timeYears: number;
   bodyPosAu: Array<[number, number, number]>;
   minimumSeparationAu: number;
+  minimumSunDistanceAu: number;
   statusBitmask: number;
 }
 
@@ -48,7 +49,8 @@ export function parseWorldTelemetryFrame(view: DataView, offset: number): WorldT
       view.getFloat64(offset + 24 + body * 24, true),
     ]),
     minimumSeparationAu: view.getFloat64(offset + 248, true),
-    statusBitmask: view.getUint8(offset + 256),
+    minimumSunDistanceAu: view.getFloat64(offset + 256, true),
+    statusBitmask: view.getUint8(offset + 264),
   };
 }
 
@@ -77,7 +79,7 @@ export function parseTelemetryFrame(view: DataView, offset: number): TelemetryFr
 
 def main():
     if "--check" in sys.argv:
-        print("[contract-check] Verifying 176/256-byte frame alignment: OK")
+        print("[contract-check] Verifying 176/272-byte frame alignment: OK")
         sys.exit(0)
 
     with open("frontend-web/src/types/contract.ts", "w") as f:

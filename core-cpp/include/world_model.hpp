@@ -10,6 +10,7 @@ struct WorldState {
     Vec3 positions_au[kBodyCount]{};
     Vec3 velocities_au_per_year[kBodyCount]{};
     double minimum_separation_au{};
+    double minimum_sun_distance_au{1.0};
     std::uint8_t status{};
 };
 

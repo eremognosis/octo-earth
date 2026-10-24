@@ -103,7 +103,7 @@ def ephemeris(
     request: SimulationRequest,
     chunk_frames: int = Query(256, ge=1, le=10_000),
 ) -> StreamingResponse:
-    """Stream positions for Mercury through Neptune and the Moon as 264-byte frames."""
+    """Stream positions for Mercury through Neptune and the Moon as 272-byte frames."""
     if libocto is None:
         raise HTTPException(status_code=503, detail="C++ core is unavailable")
     try:

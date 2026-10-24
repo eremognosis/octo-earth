@@ -49,6 +49,7 @@ extern "C" {
     double time_y;
     double body_pos_au[10][3]; // Mercury..Neptune, Moon is geocentric
     double minimum_separation_au;
+    double minimum_sun_distance_au;
     uint8_t status_bitmask;
     unsigned char padding[7];
   } WorldTelemetryFrame;
@@ -58,7 +59,7 @@ extern "C" {
 #ifdef __cplusplus
 static_assert(sizeof(SimConfig) == 48, "SimConfig ABI must be 48 bytes");
 static_assert(sizeof(TelemetryFrame) == 176, "TelemetryFrame ABI must be 176 bytes");
-static_assert(sizeof(WorldTelemetryFrame) == 264, "WorldTelemetryFrame ABI must be 264 bytes");
+static_assert(sizeof(WorldTelemetryFrame) == 272, "WorldTelemetryFrame ABI must be 272 bytes");
 #endif
 #define OCTO_EXPORT __attribute__((visibility("default")))
   OCTO_EXPORT void run_simulation(const SimConfig* config, TelemetryFrame* out_frames, size_t max_frames);

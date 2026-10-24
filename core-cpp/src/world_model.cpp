@@ -122,6 +122,14 @@ void WorldSimulator::advance_to(double time) {
 WorldState WorldSimulator::state() const {
     WorldState copy = state_;
     copy.minimum_separation_au = std::numeric_limits<double>::max();
+    copy.minimum_sun_distance_au = 1.0;
+    for (std::size_t body = 0; body < kBodyCount; ++body) {
+        if (body == 8) continue;
+        copy.minimum_sun_distance_au = std::min(
+            copy.minimum_sun_distance_au,
+            norm(copy.positions_au[body] - copy.positions_au[8])
+        );
+    }
     for (std::size_t i = 0; i < kBodyCount; ++i) {
         for (std::size_t j = i + 1; j < kBodyCount; ++j) {
             const double separation = norm(copy.positions_au[i] - copy.positions_au[j]);

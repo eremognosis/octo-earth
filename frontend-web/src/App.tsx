@@ -11,7 +11,7 @@ type Config = {
 
 function parseWorld(data: ArrayBuffer): Frame[] {
   const view = new DataView(data), frames: Frame[] = [];
-  for (let offset = 0; offset + 264 <= data.byteLength; offset += 264) {
+  for (let offset = 0; offset + 272 <= data.byteLength; offset += 272) {
     const positions = Array.from({ length: 10 }, (_, body) => [
       view.getFloat64(offset + 8 + body * 24, true),
       view.getFloat64(offset + 16 + body * 24, true),
@@ -20,7 +20,8 @@ function parseWorld(data: ArrayBuffer): Frame[] {
     frames.push({
       time: view.getFloat64(offset, true), positions,
       separation: view.getFloat64(offset + 248, true),
-      status: view.getUint8(offset + 256),
+      minimumSunDistance: view.getFloat64(offset + 256, true),
+      status: view.getUint8(offset + 264),
     });
   }
   return frames;
@@ -36,7 +37,7 @@ function statusText(status: number) {
 
 export function App() {
   const [config, setConfig] = useState<Config>({
-    target_au: 2.7, max_years: 10000, frames: 500,
+    target_au: 2.7, max_years: 10000, frames: 500000,
     gravity_tether_on: true, propulsion_enabler: true,
     structural_enabler: true, superconducting_enabler: true,
   });
@@ -65,25 +66,11 @@ export function App() {
     finally { setBusy(false); }
   }
 
-  return <main>
-    <header><div><p className="eyebrow">PROJECT OCTO-EARTH</p><h1>Mission control</h1></div><span className={busy ? "badge running" : "badge"}>{busy ? "SIMULATING" : "READY"}</span></header>
+  return <main className="mission-shell">
+    <header className="mission-header"><div><p className="eyebrow">PROJECT OCTO-EARTH · HELIOCENTRIC OBSERVATORY</p><h1>Deep space mission control</h1></div><span className={busy ? "badge running" : "badge"}>{busy ? "SIMULATING" : "READY"}</span></header>
     <section className="grid">
       <form className="panel controls" onSubmit={run}>
-        <h2>Simulation inputs</h2>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setConfig((old) => ({ ...old, max_years: 30, frames: 3000 }))}
-          >
-            Preset: Orbit (30 yr)
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfig((old) => ({ ...old, max_years: 10000, frames: 1000 }))}
-          >
-            Preset: Journey (10k yr)
-          </button>
-        </div>
+        <div className="panel-heading"><span className="section-kicker">FLIGHT CONFIGURATION</span><h2>Simulation inputs</h2></div>
         <label>Target orbit (AU)<input type="number" min="0.1" step="0.01" value={config.target_au} onChange={(e) => update("target_au", Number(e.target.value))} /></label>
         <label>Duration (years)<input type="number" min="1" step="1" value={config.max_years} onChange={(e) => update("max_years", Number(e.target.value))} /></label>
         <label>Output frames<input type="number" min="1" max="1000000" value={config.frames} onChange={(e) => update("frames", Number(e.target.value))} /></label>
@@ -96,9 +83,9 @@ export function App() {
         {error && <p className="error">{error}</p>}
       </form>
       <section className="panel telemetry">
-        <div className="panel-title"><h2>World telemetry</h2><span>{frames.length} frames received</span></div>
+        <div className="panel-title"><div><span className="section-kicker">LIVE OBSERVATORY FEED</span><h2>Heliocentric system</h2></div><span>{frames.length} frames</span></div>
         {!current ? <div className="empty">Run a simulation to inspect numerical ephemeris data.</div> : <>
-          <div style={{ height: 460, borderRadius: 8, overflow: "hidden", background: "#060913", marginBottom: 12 }}>
+          <div className="space-view">
             <Canvas camera={{ position: [0, 40, 60], fov: 50 }}>
               <HeliocentricScene
                 frames={frames}
@@ -107,10 +94,22 @@ export function App() {
                 followEarth={followEarth}
                 tRef={tRef}
                 onFrame={setSelected}
+                activeFrame={selected}
               />
             </Canvas>
+            <div className="earth-hud">
+              <span className="hud-label"><i className="live-dot" /> EARTH TELEMETRY</span>
+              <strong>{current.time.toFixed(2)} <small>YEARS ELAPSED</small></strong>
+              <div className="hud-coordinates">
+                <span>X <b>{current.positions[2][0].toFixed(4)} AU</b></span>
+                <span>Y <b>{current.positions[2][1].toFixed(4)} AU</b></span>
+                <span>Z <b>{current.positions[2][2].toFixed(4)} AU</b></span>
+              </div>
+              <span className="hud-distance">CLOSEST BODY TO SUN <b>{current.minimumSunDistance.toFixed(4)} AU</b></span>
+              <span className={current.status ? "hud-status danger" : "hud-status safe"}>{current.status ? statusText(current.status) : "NOMINAL · ORBITAL LOCK"}</span>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+          <div className="scene-controls">
             <button type="button" onClick={() => setPlaying((p) => !p)}>
               {playing ? "Pause" : "Play"}
             </button>
@@ -134,8 +133,7 @@ export function App() {
               setSelected(idx);
             }}
           />
-          <div className="metrics"><div><small>Time</small><strong>{current.time.toFixed(2)} years</strong></div><div><small>Min separation</small><strong>{current.separation.toExponential(4)} AU</strong></div><div><small>Status</small><strong className={current.status ? "danger" : "safe"}>{statusText(current.status)}</strong></div></div>
-          <table><thead><tr><th>Body</th><th>X (AU)</th><th>Y (AU)</th><th>Z (AU)</th></tr></thead><tbody>{current.positions.map((position, i) => <tr key={bodies[i]}><td>{bodies[i]}</td><td>{position[0].toFixed(8)}</td><td>{position[1].toFixed(8)}</td><td>{position[2].toFixed(8)}</td></tr>)}</tbody></table>
+          <div className="metrics"><div><small>Min separation</small><strong>{current.separation.toExponential(4)} AU</strong></div><div><small>Tracked bodies</small><strong>{bodies.length - 1} orbiting</strong></div><div><small>Orbital display</small><strong>Current revolution</strong></div></div>
         </>}
       </section>
     </section>
