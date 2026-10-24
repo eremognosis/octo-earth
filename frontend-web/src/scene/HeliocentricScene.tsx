@@ -32,7 +32,7 @@ const BODY_META: { name: string; color: string; radius: number; texture: string 
   { name: "Uranus", color: "#38bdf8", radius: 0.70, texture: "/textures/planets/uranus.jpg" },
   { name: "Neptune", color: "#6366f1", radius: 0.70, texture: "/textures/planets/neptune.jpg" },
   { name: "Sun", color: "#facc15", radius: 2.00, texture: "/textures/planets/sun.jpg" },
-  { name: "Moon", color: "#e5e7eb", radius: 0.15, texture: "/textures/planets/moon.jpg" },
+  { name: "Moon", color: "#e5e7eb", radius: 0.09, texture: "/textures/planets/moon.jpg" },
 ];
 
 const TEXTURE_URLS = [
@@ -42,6 +42,128 @@ const TEXTURE_URLS = [
   "/textures/planets/saturn-rings.png",
   "/textures/planets/earth-night.jpg",
 ];
+
+const EARTH_DISPLAY_RADIUS = BODY_META[2].radius;
+const EARTH_PHYSICAL_RADIUS_KM = 6378.137;
+const STRUCTURE_SCALE = EARTH_DISPLAY_RADIUS / EARTH_PHYSICAL_RADIUS_KM;
+const RING_RADIUS = 7000 * STRUCTURE_SCALE;
+const ARM_LENGTH = (72000 - 7000) * STRUCTURE_SCALE;
+const ARM_SEGMENT_COUNT = 24;
+const ARM_SEGMENT_LENGTH = ARM_LENGTH / ARM_SEGMENT_COUNT;
+const ARM_RADIUS = 0.012;
+const MOON_ORBIT_RADIUS = EARTH_DISPLAY_RADIUS * 13;
+const MOON_ORBIT_ANGULAR_SPEED = (Math.PI * 2) / 36;
+
+function ArticulatedArm({ phase }: { phase: number }) {
+  const segments = useRef<(THREE.Group | null)[]>([]);
+
+  useFrame(({ clock }) => {
+    const time = clock.elapsedTime;
+    segments.current.forEach((segment, index) => {
+      if (!segment) return;
+      const wave = time * 0.65 + index * 0.32 + phase;
+      segment.rotation.z = Math.sin(wave) * 0.009;
+      segment.rotation.y = Math.sin(wave * 0.8) * 0.018;
+    });
+  });
+
+  const renderSegment = (index: number): React.ReactNode => (
+    <group
+      ref={(node) => {
+        segments.current[index] = node;
+      }}
+      position={index === 0 ? [0, 0, 0] : [ARM_SEGMENT_LENGTH, 0, 0]}
+    >
+      <mesh position={[ARM_SEGMENT_LENGTH * 0.43, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <cylinderGeometry
+          args={[
+            ARM_RADIUS * (index === ARM_SEGMENT_COUNT - 1 ? 0.55 : 0.82),
+            ARM_RADIUS,
+            ARM_SEGMENT_LENGTH * 0.78,
+            10,
+          ]}
+        />
+        <meshStandardMaterial
+          color={index % 3 === 0 ? "#aeb9c5" : "#647487"}
+          metalness={0.82}
+          roughness={0.34}
+        />
+      </mesh>
+      <mesh position={[ARM_SEGMENT_LENGTH * 0.43, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+        <cylinderGeometry args={[ARM_RADIUS * 0.3, ARM_RADIUS * 0.3, ARM_SEGMENT_LENGTH * 0.9, 8]} />
+        <meshStandardMaterial color="#d4a84f" metalness={0.78} roughness={0.28} />
+      </mesh>
+      <mesh position={[ARM_SEGMENT_LENGTH, 0, 0]}>
+        <sphereGeometry args={[ARM_RADIUS * 1.12, 12, 10]} />
+        <meshStandardMaterial color="#c3ced7" metalness={0.84} roughness={0.28} />
+      </mesh>
+      <mesh
+        position={[ARM_SEGMENT_LENGTH * 0.12, 0, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        <torusGeometry args={[ARM_RADIUS * 1.05, ARM_RADIUS * 0.2, 6, 12]} />
+        <meshStandardMaterial color="#d6ad59" metalness={0.82} roughness={0.3} />
+      </mesh>
+      {index + 1 < ARM_SEGMENT_COUNT && renderSegment(index + 1)}
+    </group>
+  );
+
+  return (
+    <group>{renderSegment(0)}</group>
+  );
+}
+
+function EarthRingStructure({
+  earthMeshRef,
+}: {
+  earthMeshRef: React.MutableRefObject<(THREE.Mesh | null)[]>;
+}) {
+  const structure = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const earth = earthMeshRef.current[2];
+    if (earth && structure.current) structure.current.position.copy(earth.position);
+  });
+
+  return (
+    <group ref={structure} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh>
+        <torusGeometry args={[RING_RADIUS, 0.018, 12, 256]} />
+        <meshStandardMaterial color="#8293a3" metalness={0.84} roughness={0.32} />
+      </mesh>
+      <mesh>
+        <torusGeometry args={[RING_RADIUS, 0.006, 8, 256]} />
+        <meshStandardMaterial color="#dbb45d" metalness={0.86} roughness={0.28} />
+      </mesh>
+
+      {Array.from({ length: 8 }, (_, index) => {
+        const angle = (index * Math.PI) / 4;
+        const x = Math.cos(angle);
+        const y = Math.sin(angle);
+        return (
+          <group
+            key={index}
+            position={[x * RING_RADIUS, y * RING_RADIUS, 0]}
+            rotation={[0, 0, angle]}
+          >
+            <mesh position={[-RING_RADIUS * 0.055, 0, 0]}>
+              <cylinderGeometry args={[0.015, 0.021, RING_RADIUS * 0.11, 12]} />
+              <meshStandardMaterial color="#68798a" metalness={0.86} roughness={0.34} />
+            </mesh>
+            <mesh>
+              <sphereGeometry args={[0.033, 16, 12]} />
+              <meshStandardMaterial color="#d2ae64" metalness={0.82} roughness={0.27} />
+            </mesh>
+            <mesh position={[0.021, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+              <cylinderGeometry args={[0.022, 0.03, 0.052, 12]} />
+              <meshStandardMaterial color="#778797" metalness={0.84} roughness={0.32} />
+            </mesh>
+            <ArticulatedArm phase={index * Math.PI / 4} />
+          </group>
+        );
+      })}
+    </group>
+  );
+}
 
 function simAuToSceneVec(posAu: number[]): [number, number, number] {
   const [x, y, z] = posAu;
@@ -62,6 +184,8 @@ export function HeliocentricScene({
 }: HeliocentricSceneProps) {
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
   const failurePulse = useRef<THREE.Mesh | null>(null);
+  const moonOrbitRef = useRef<THREE.Group | null>(null);
+  const moonPhase = useRef(0);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const lastReportedIntFrame = useRef<number>(-1);
   const { camera } = useThree();
@@ -142,6 +266,22 @@ export function HeliocentricScene({
       const trail = bodyPositions[b];
       if (!mesh || !trail || trail.length === 0) continue;
 
+      if (b === 9) {
+        const earth = meshRefs.current[2];
+        if (earth) {
+          if (playing) moonPhase.current += dt * MOON_ORBIT_ANGULAR_SPEED;
+          const phase = moonPhase.current;
+          mesh.position.set(
+            earth.position.x + Math.cos(phase) * MOON_ORBIT_RADIUS,
+            earth.position.y,
+            earth.position.z + Math.sin(phase) * MOON_ORBIT_RADIUS
+          );
+          moonOrbitRef.current?.position.copy(earth.position);
+          mesh.rotation.y += dt * 0.08;
+          continue;
+        }
+      }
+
       const p0 = trail[i0];
       const p1 = trail[i1];
 
@@ -184,6 +324,12 @@ export function HeliocentricScene({
       </mesh>
       <OrbitControls ref={controlsRef} makeDefault />
       <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
+      <group ref={moonOrbitRef} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh>
+          <torusGeometry args={[MOON_ORBIT_RADIUS, 0.006, 8, 160]} />
+          <meshBasicMaterial color="#a9bdce" transparent opacity={0.28} />
+        </mesh>
+      </group>
 
       {recentTrails.map((points, b) => {
         if (b === 8 || points.length < 2) return null;
@@ -275,6 +421,7 @@ export function HeliocentricScene({
           )}
         </mesh>
       ))}
+      <EarthRingStructure earthMeshRef={meshRefs} />
     </group>
   );
 }

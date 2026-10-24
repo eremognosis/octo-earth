@@ -22,6 +22,12 @@ maps load locally at runtime, so the visualization does not depend on an
 external image server. Required credits and source notes are in
 `frontend-web/public/textures/planets/ATTRIBUTION.txt`.
 
+The scene also shows a visualization-only eight-arm segmented ring around
+Earth, mounted at a 7,000 km radius with arm tips at approximately 72,000 km
+from Earth's center, and a Moon revolving around Earth. Celestial display
+distances and sizes are enlarged for visibility; this visual assembly does not
+change or validate the simulation's physical model or Earth trajectory.
+
 ## Declared hypothetical enablers
 
 The current prototype exposes **three** bounded enablers, matching the
