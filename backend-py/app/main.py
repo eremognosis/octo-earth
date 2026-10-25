@@ -77,6 +77,15 @@ def _compliance_archive(request: SimulationRequest, world) -> bytes:
     temperature_series = (solar_flux_series * 0.694 / (4.0 * 5.670374419e-8)) ** 0.25
     solar_flux = float(solar_flux_series[-1])
     temperature = float(temperature_series[-1])
+    target_temperature = 288.0
+    effective_radiating_temperature = 255.0
+    climate_efficiency = 0.70
+    earth_radius_m = 6.371e6
+    required_incident_flux = (
+        4.0 * 5.670374419e-8 * effective_radiating_temperature**4 / 0.694
+    )
+    artificial_flux = max(required_incident_flux - solar_flux, 0.0)
+    climate_power_w = artificial_flux * np.pi * earth_radius_m**2 / climate_efficiency
     moon_bound = bool(np.all(moon_relative < moon_hill))
     antimatter_enabled = request.propulsion_enabler
     momentum_enabled = request.structural_enabler
@@ -119,6 +128,12 @@ def _compliance_archive(request: SimulationRequest, world) -> bytes:
             f"ORBITAL_ENERGY_J: {orbital_energy_j:.12g}\n"
             f"ANTIMATTER_FUEL_KG: {antimatter_fuel_kg:.12g}\n"
             f"AVERAGE_POWER_W: {average_power_w:.12g}\n"
+            f"NATURAL_EQUILIBRIUM_TEMPERATURE_K: {temperature:.12g}\n"
+            f"CLIMATE_TARGET_TEMPERATURE_K: {target_temperature:.12g}\n"
+            f"CLIMATE_EFFECTIVE_RADIATING_TEMPERATURE_K: {effective_radiating_temperature:.12g}\n"
+            f"ARTIFICIAL_HEATING_FLUX_W_M2: {artificial_flux:.12g}\n"
+            f"CLIMATE_DELIVERY_POWER_W: {climate_power_w:.12g}\n"
+            "CLIMATE_SOURCE: ACREC-powered orbital refractor/mirror network\n"
         ),
         "conservation_ledger.csv": (
             "time_years,external_force_N,reaction_force_N,net_force_N,external_power_W,"
@@ -133,10 +148,11 @@ def _compliance_archive(request: SimulationRequest, world) -> bytes:
             f"{float(world['time_years'][-1]):.12g},{angular_total[-1,0]:.12g},{angular_total[-1,1]:.12g},{angular_total[-1,2]:.12g},{angular_drift:.12g},MEASURED\n"
         ),
         "habitability.csv": (
-            "time_years,solar_flux_W_m2,equilibrium_temperature_K,liquid_water,atmosphere,"
+            "time_years,solar_flux_W_m2,equilibrium_temperature_K,artificial_flux_W_m2,"
+            "climate_delivery_power_W,target_temperature_K,liquid_water,atmosphere,"
             "magnetic_shielding,moon_bound,status\n"
-            f"{float(world['time_years'][-1])},{solar_flux:.12g},{reported_temperature:.12g},"
-            f"{liquid_water},"
+            f"{float(world['time_years'][-1])},{solar_flux:.12g},{temperature:.12g},"
+            f"{artificial_flux:.12g},{climate_power_w:.12g},{reported_temperature:.12g},{liquid_water},"
             f"{atmosphere_retained},{magnetic_shielding},{moon_bound},MEASURED\n"
         ),
         "convergence.csv": (

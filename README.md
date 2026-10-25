@@ -42,14 +42,17 @@ participant guide limit:
    Earth system.
 3. **Adaptive Geodesic Collision-Avoidance Habitat Shield (AGCAHS)**: an
    assumed field-and-material envelope preserves structural margin,
-   atmosphere, magnetic shielding, and heating while applying bounded
-   finite-body separation before contact.
+   atmosphere, magnetic shielding, and climate. ACREC-powered orbital
+   refractors/mirrors deliver the missing heat at 2.7 AU while AGCAHS
+   distributes it and limits atmospheric loss.
 
 With all three enabled, the assumed energy source, reaction path, and habitat
 system are active and the modeled 10,000-year mission can pass. With
 ACREC disabled the target journey is incomplete; with NMEVA disabled the
 structure/momentum gate fails; with AGCAHS disabled the thermal/structural and
-collision gates fail. These are explicit
+collision gates fail. At 2.7 AU the audit computes about `1.2 kW/m²` of
+additional incident heat and `2.2e17 W` delivered climate power for a 288 K
+surface under a 255 K effective-radiating greenhouse envelope. These are explicit
 simulation assumptions, not claims about present-day engineering.
 
 ## Validation status

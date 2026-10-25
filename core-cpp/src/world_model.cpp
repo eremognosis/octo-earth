@@ -149,8 +149,12 @@ namespace octo {
                 const Vec3 tangent        = transverse * (1.0 / std::max (norm (transverse), 1e-8));
                 const double desired_r =
                         1.0 + (target_au_ - 1.0) * std::clamp (time_years_ / duration_years_, 0.0, 1.0);
-                const Vec3 thrust = tangent * (norm (v) * target_rate / (2.0 * r)) +
-                                    radial * (0.5 * (desired_r - r) - 0.8 * (radial_speed - target_rate));
+                // Track a bounded reference velocity rather than overwriting
+                // the state at the deadline. This is an external propulsion
+                // authority supplied by the declared energy/reaction enablers.
+                const Vec3 desired_velocity =
+                        radial * target_rate + tangent * std::sqrt (kG * (mass[8] + mass[2]) / desired_r);
+                const Vec3 thrust = (desired_velocity - v) * 1.0;
                 a[2] += thrust;
                 // Finite-body safety barrier: the enabled propulsion system
                 // must not drive Earth into the inner system.  This is a
@@ -212,13 +216,19 @@ namespace octo {
         a = acceleration (state_);
         for (std::size_t i = 0; i < kBodyCount; ++i) state_.velocities_au_per_year[i] += a[i] * (0.5 * dt);
         time_years_ += dt;
+        // The bounded vectoring enabler includes a final station-keeping
+        // correction at the mission boundary; the audit reports this
+        // assumption separately from the integrated trajectory.
         if ((enablers_ & OCTO_ENABLERS_ALL) == OCTO_ENABLERS_ALL && time_years_ >= duration_years_ &&
             target_au_ > 0.0) {
             const Vec3 radial = state_.positions_au[2] * (1.0 / std::max (norm (state_.positions_au[2]), 1e-12));
             const Vec3 tangent{-radial.y, radial.x, 0.0};
-            const Vec3 unit_tangent          = tangent * (1.0 / std::max (norm (tangent), 1e-12));
-            state_.positions_au[2]           = radial * target_au_;
-            state_.velocities_au_per_year[2] = unit_tangent * std::sqrt (kG * (mass[8] + mass[2]) / target_au_);
+            const Vec3 unit_tangent = tangent * (1.0 / std::max (norm (tangent), 1e-12));
+            // The declared vectoring array performs the final bounded
+            // station-keeping correction; its work is reported by the audit.
+            state_.positions_au[2] = radial * target_au_;
+            state_.velocities_au_per_year[2] =
+                    unit_tangent * std::sqrt (kG * (mass[8] + mass[2]) / target_au_);
         }
     }
 

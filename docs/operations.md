@@ -36,7 +36,7 @@ not reinterpret enlarged display geometry as a physical collision.
 | `validation_benchmarks.csv` | Ten benchmark records and their evidence |
 | `conservation_ledger.csv` | Force/reaction, power, momentum residual, and energy residual |
 | `angular_momentum.csv` | Angular momentum components and relative drift |
-| `habitability.csv` | Flux, temperature, water, atmosphere, magnetic, and Moon checks |
+| `habitability.csv` | Unprotected equilibrium flux/temperature plus the bounded habitat temperature, water, atmosphere, magnetic, and Moon checks |
 | `convergence.csv` | Default versus half-step numerical comparison |
 | `collision_check.csv` | Frame count, collision count, and minimum separation |
 

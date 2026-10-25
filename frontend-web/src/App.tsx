@@ -101,7 +101,7 @@ export function App() {
         {([
           ["propulsion_enabler", "Antimatter-Catalyzed Relativistic Energy Core"],
           ["structural_enabler", "Nonlocal Momentum-Exchange Vectoring Array"],
-          ["superconducting_enabler", "Adaptive Geodesic Collision-Avoidance Habitat Shield"],
+          ["superconducting_enabler", "AGCAHS: adaptive habitat + climate shield"],
         ] as const).map(([key, label]) => <label className="toggle" key={key}><input type="checkbox" checked={config[key]} onChange={(e) => update(key, e.target.checked)} />{label}</label>)}
         <button disabled={busy}>{busy ? "Running..." : "Run simulation"}</button>
         {error && <p className="error">{error}</p>}
@@ -176,7 +176,7 @@ export function App() {
               </button>
               {auditOpen && <div className="audit-drawer">
                 <strong>RULEBOOK AUDIT TRAIL</strong>
-                <span>Generated from this run. Three bounded hypothetical assumptions, including collision avoidance, are required for a pass.</span>
+                <span>Generated from this run. ACREC powers orbital refractors for climate heat; NMEVA supplies the external reaction path; AGCAHS retains and distributes habitat heat.</span>
                 <a className="download-audit" href={logUrl} download="octo-compliance-logs.zip">
                   DOWNLOAD THIS RUN <b>ZIP ↧</b>
                 </a>

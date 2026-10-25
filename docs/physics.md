@@ -57,6 +57,19 @@ the albedo/radiative-balance relation:
 T = [F (1-alpha) / (4 sigma)]^(1/4)
 ```
 
-The enabled habitat assumption supplies the declared atmosphere, magnetic,
-water, and thermal protection envelope; Moon binding is checked against an
-Earth Hill-radius estimate.
+At the target orbit the system adds a declared artificial heating flux:
+
+```text
+F_artificial = 4 sigma T_effective^4 / (1-alpha) - L_sun/(4 pi r^2)
+P_climate = F_artificial pi R_Earth^2 / efficiency
+```
+
+The target is a 288 K surface with an Earth-like greenhouse envelope, so its
+effective radiating temperature is bounded at 255 K. For 2.7 AU, `alpha =
+0.306`, and 70% delivery efficiency, this requires approximately `1.2e3
+W/m2` of artificial incident flux and `2.2e17 W` delivered power. ACREC supplies that power and
+the orbital refractor/mirror network supplies the optical path; the audit
+reports the required flux and power separately from the natural equilibrium
+temperature. AGCAHS is the declared receiver, atmospheric-retention, and
+thermal-distribution assumption. Moon binding is checked against an Earth
+Hill-radius estimate.
