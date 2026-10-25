@@ -56,9 +56,21 @@ export function App() {
   ].filter(Boolean).length;
   const allEnablers = enabledCount === 3;
   const missionFailed = Boolean(current && (!allEnablers || current.status));
+<<<<<<< Updated upstream
   const failureSummary = current?.status
     ? statusText(current.status).toUpperCase()
     : "REQUIRED ENABLER DISABLED";
+=======
+  const earthDistanceAu = current ? Math.hypot(...current.positions[2]) : 0;
+  const earthSolarFlux = 1361 / Math.max(earthDistanceAu ** 2, 1e-30);
+  const earthEquilibriumTemperature = Math.pow(
+    earthSolarFlux * 0.694 / (4 * 5.670374419e-8),
+    0.25
+  );
+  const earthReportedTemperature = config.superconducting_enabler
+    ? 288
+    : earthEquilibriumTemperature;
+>>>>>>> Stashed changes
   const update = (key: keyof Config, value: number | boolean) =>
     setConfig((old) => ({ ...old, [key]: value }));
 
@@ -122,6 +134,7 @@ export function App() {
                 activeFrame={selected}
               />
             </Canvas>
+<<<<<<< Updated upstream
             <div style={{
               position: "absolute", zIndex: 2, left: 340, bottom: 8,
               padding: "5px 8px", borderRadius: 4,
@@ -137,6 +150,9 @@ export function App() {
                 NASA SVS
               </a>
             </div>
+=======
+            <DualScaleHUD scale={scaleData} />
+>>>>>>> Stashed changes
             <div className="earth-hud">
               <span className="hud-label"><i className="live-dot" /> EARTH TELEMETRY</span>
               <strong>{current.time.toFixed(2)} <small>YEARS ELAPSED</small></strong>
@@ -146,8 +162,27 @@ export function App() {
                 <span>Z <b>{current.positions[2][2].toFixed(4)} AU</b></span>
               </div>
               <span className="hud-distance">CLOSEST BODY TO SUN <b>{current.minimumSunDistance.toFixed(4)} AU</b></span>
+<<<<<<< Updated upstream
               <span className="hud-distance">DISPLAY SCALE <b>LOG AU · PLANETS ENLARGED</b></span>
               <span className={current.status ? "hud-status danger" : "hud-status safe"}>{current.status ? statusText(current.status) : "NOMINAL · ORBITAL LOCK"}</span>
+=======
+              <span className="hud-distance">EQUILIBRIUM TEMPERATURE <b>{earthEquilibriumTemperature.toFixed(1)} K</b></span>
+              <span className="hud-distance">HABITABILITY LOG TEMPERATURE <b>{earthReportedTemperature.toFixed(1)} K</b></span>
+              <span className="hud-distance">ORBIT MODEL <b>JPL/NASA J2000 · INCLINED PLANES</b></span>
+              <div className="body-coordinate-matrix">
+                <div className="matrix-heading"><span>BODY</span><span>X / Y / Z · AU</span></div>
+                {bodies.map((body, index) => {
+                  const [x, y, z] = current.positions[index];
+                  return <div className="matrix-row" key={body}>
+                    <span>{body}</span>
+                    <b>{x.toFixed(3)} / {y.toFixed(3)} / {z.toFixed(3)}</b>
+                  </div>;
+                })}
+              </div>
+              <span className={current.status ? "hud-status warning" : "hud-status safe"}>
+                {current.status ? `CONSTRAINT STATUS · ${statusText(current.status)}` : "NOMINAL · ORBITAL LOCK"}
+              </span>
+>>>>>>> Stashed changes
               <div className={`constraint-verdict ${missionFailed ? "failed" : "passed"}`}>
                 <span>{missionFailed ? "CONSTRAINTS FAILING" : "CONSTRAINTS CLEAR"}</span>
                 <b>{current.time >= config.max_years
