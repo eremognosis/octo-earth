@@ -30,6 +30,8 @@ capabilities that violate present engineering limits:
 
 - an enormous, safely storable antimatter inventory and near-total conversion
   efficiency;
+- a solar-system-scale steerable refractor/mirror swarm capable of delivering
+  roughly `2.2e17 W` to Earth at 2.7 AU;
 - an external momentum sink/source unavailable to an ordinary isolated Earth
   system;
 - field strengths and response times capable of preventing contact between
