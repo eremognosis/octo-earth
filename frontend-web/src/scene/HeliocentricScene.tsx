@@ -167,11 +167,14 @@ function EarthRingStructure({
   );
 }
 
+// Display-only multiplier on orbit radii: widens inter-orbit spacing without touching sim data or timing.
+const ORBIT_SPREAD = 1.6;
+
 function simAuToSceneVec(posAu: number[]): [number, number, number] {
   const [x, y, z] = posAu;
   const r = Math.hypot(x, y, z);
   if (r < 1e-9) return [0, 0, 0];
-  const scale = (10 * Math.sqrt(r)) / r;
+  const scale = (10 * ORBIT_SPREAD * Math.sqrt(r)) / r;
   return [x * scale, z * scale, y * scale];
 }
 
@@ -337,7 +340,7 @@ export function HeliocentricScene({
 
         const barPx = 100;
         const barSceneUnits = barPx * sceneUnitsPerPixel;
-        const orbitAu = barSceneUnits * 0.1;
+        const orbitAu = (barSceneUnits * 0.1) / ORBIT_SPREAD;
         const orbitKm = orbitAu * 149597870.7;
         const planetKm = barSceneUnits * 15945.3425;
         const planetAu = planetKm / 149597870.7;
@@ -375,7 +378,7 @@ export function HeliocentricScene({
         <meshBasicMaterial color="#ff315d" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
       </mesh>
       <OrbitControls ref={controlsRef} makeDefault />
-      <gridHelper args={[120, 24, "#334155", "#1e293b"]} />
+      <gridHelper args={[120 * ORBIT_SPREAD, 24,"#334155", "#1e293b"]} />
       <group ref={moonOrbitRef} rotation={[Math.PI / 2, 0, 0]}>
         <mesh>
           <torusGeometry args={[MOON_ORBIT_RADIUS, 0.006, 8, 160]} />
